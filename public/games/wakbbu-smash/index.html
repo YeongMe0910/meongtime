@@ -1,0 +1,710 @@
+<!-- public/games/wakbbu-smash/index.html -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>왁뿌볼 뿌수기</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: radial-gradient(circle at center, #1e112a 0%, #08050e 100%);
+      font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Segoe UI", sans-serif;
+      color: #fff;
+    }
+    #game-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px;
+    }
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+    .ui-layer {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      max-width: 480px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      pointer-events: none;
+    }
+    .header {
+      margin-top: 8px;
+      text-align: center;
+      width: 100%;
+    }
+    .stage-badge {
+      background: linear-gradient(135deg, #10b981, #059669);
+      padding: 4px 16px;
+      border-radius: 999px;
+      font-weight: 900;
+      font-size: 13px;
+      letter-spacing: 1px;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+      display: inline-block;
+    }
+    .ball-name {
+      font-size: 24px;
+      font-weight: 900;
+      margin: 8px 0 6px;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+    }
+    .hp-container {
+      width: 100%;
+      height: 20px;
+      background: rgba(0,0,0,0.6);
+      border-radius: 12px;
+      border: 2px solid rgba(255,255,255,0.2);
+      overflow: hidden;
+      position: relative;
+    }
+    .hp-bar {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg, #ef4444, #f59e0b, #10b981);
+      transition: width 0.04s ease-out;
+    }
+    .hp-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 11px;
+      font-weight: 800;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.9);
+    }
+    .stats-row {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      margin-top: 8px;
+      font-size: 14px;
+      font-weight: 800;
+    }
+    .combo-text {
+      color: #fbbf24;
+      font-size: 18px;
+      font-weight: 900;
+      text-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
+    }
+    .bottom-ui {
+      width: 100%;
+      max-width: 480px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 12px;
+      pointer-events: auto;
+    }
+    .upgrade-btn {
+      background: rgba(26, 20, 39, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(8px);
+      padding: 12px;
+      border-radius: 14px;
+      color: #fff;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      transition: all 0.1s;
+    }
+    .upgrade-btn:active {
+      transform: scale(0.96);
+      background: rgba(45, 34, 66, 0.95);
+    }
+    .upgrade-btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .btn-title { font-size: 12px; font-weight: 700; color: #a78bfa; }
+    .btn-val { font-size: 15px; font-weight: 900; color: #facc15; }
+    .btn-cost { font-size: 11px; color: #38bdf8; font-weight: 700; }
+  </style>
+</head>
+<body>
+
+<div id="game-container">
+  <canvas id="gameCanvas"></canvas>
+
+  <!-- 상단 체력/코인 UI -->
+  <div class="ui-layer">
+    <div class="header">
+      <span class="stage-badge" id="ballLevel">STAGE 1</span>
+      <div class="ball-name" id="ballName">기본 왁뿌볼</div>
+      <div class="hp-container">
+        <div class="hp-bar" id="hpBar"></div>
+        <div class="hp-text" id="hpText">100 / 100</div>
+      </div>
+      <div class="stats-row">
+        <span>💰 <span id="coinText" style="color:#facc15;">0</span> 왁코인</span>
+        <span id="comboDisplay" class="combo-text"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 하단 강화 UI -->
+  <div class="ui-layer">
+    <div class="bottom-ui">
+      <button class="upgrade-btn" id="btnPower">
+        <span class="btn-title">💥 빠따 공격력</span>
+        <span class="btn-val">Lv.<span id="powerLv">1</span> (+<span id="powerVal">1</span>)</span>
+        <span class="btn-cost"><span id="powerCost">10</span> 코인</span>
+      </button>
+      <button class="upgrade-btn" id="btnAuto">
+        <span class="btn-title">🔨 자동 뿅망치</span>
+        <span class="btn-val">Lv.<span id="autoLv">0</span> (초당 <span id="autoVal">0</span>)</span>
+        <span class="btn-cost"><span id="autoCost">30</span> 코인</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ==========================================================
+   1. 오디오 엔진 (ASMR 크런치 & 파쇄 사운드 합성)
+   ========================================================== */
+let audioCtx = null;
+const customHitSound = new Audio();
+let hasCustomHit = false;
+
+function initAudio() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+}
+
+// 찰진 ASMR 바작/크런치 깨지는 소리
+function playCrispBreakSound(combo) {
+  if (hasCustomHit) {
+    const clone = customHitSound.cloneNode();
+    clone.volume = 0.8;
+    clone.play();
+    return;
+  }
+  if (!audioCtx) return;
+  const now = audioCtx.currentTime;
+
+  // 1. 와작 찌그러지는 멀티 레이어 노이즈 파편음
+  const bufferSize = Math.floor(audioCtx.sampleRate * 0.05);
+  const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < bufferSize; i++) {
+    data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.3));
+  }
+  const noise = audioCtx.createBufferSource();
+  noise.buffer = buffer;
+
+  const filter = audioCtx.createBiquadFilter();
+  filter.type = 'bandpass';
+  filter.frequency.setValueAtTime(2500 + Math.min(combo * 40, 1500), now);
+  filter.Q.value = 3;
+
+  const gain = audioCtx.createGain();
+  gain.gain.setValueAtTime(0.7, now);
+  gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+
+  noise.connect(filter);
+  filter.connect(gain);
+  gain.connect(audioCtx.destination);
+  noise.start(now);
+
+  // 2. 묵직한 타격 바디 임팩트 (쿵)
+  const osc = audioCtx.createOscillator();
+  const oscGain = audioCtx.createGain();
+  osc.type = 'triangle';
+  osc.frequency.setValueAtTime(160, now);
+  osc.frequency.exponentialRampToValueAtTime(30, now + 0.06);
+
+  oscGain.gain.setValueAtTime(0.5, now);
+  oscGain.gain.exponentialRampToValueAtTime(0.01, now + 0.06);
+
+  osc.connect(oscGain);
+  oscGain.connect(audioCtx.destination);
+  osc.start(now);
+  osc.stop(now + 0.06);
+}
+
+// 왁뿌볼 산산조각 대폭발음 (와장창!)
+function playShatterSound() {
+  if (!audioCtx) return;
+  const now = audioCtx.currentTime;
+
+  // 서브 베이스 쿵!
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(180, now);
+  osc.frequency.exponentialRampToValueAtTime(20, now + 0.45);
+  gain.gain.setValueAtTime(1.0, now);
+  gain.gain.exponentialRampToValueAtTime(0.01, now + 0.45);
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.start(now);
+  osc.stop(now + 0.45);
+
+  // 산산조각 파편 유리/플라스틱 와장창 노이즈
+  const bSize = Math.floor(audioCtx.sampleRate * 0.3);
+  const buffer = audioCtx.createBuffer(1, bSize, audioCtx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < bSize; i++) {
+    data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bSize * 0.4));
+  }
+  const noise = audioCtx.createBufferSource();
+  noise.buffer = buffer;
+  const filter = audioCtx.createBiquadFilter();
+  filter.type = 'highpass';
+  filter.frequency.value = 800;
+
+  const nGain = audioCtx.createGain();
+  nGain.gain.setValueAtTime(0.9, now);
+  nGain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+
+  noise.connect(filter);
+  filter.connect(nGain);
+  nGain.connect(audioCtx.destination);
+  noise.start(now);
+}
+
+/* ==========================================================
+   2. 게임 데이터 및 이미지 로더
+   ========================================================== */
+const ballImage = new Image();
+let isImageLoaded = false;
+// 같은 폴더에 wakbbu.png 파일이 있으면 해당 이미지를 사용합니다.
+ballImage.src = 'wakbbu.png';
+ballImage.onload = () => { isImageLoaded = true; };
+
+const BALL_PRESETS = [
+  { name: "순둥이 왁뿌볼", color: "#10b981", accent: "#047857", hp: 40, coins: 20 },
+  { name: "화난 왁뿌볼", color: "#f59e0b", accent: "#b45309", hp: 120, coins: 70 },
+  { name: "흑화 왁두볼", color: "#8b5cf6", accent: "#6d28d9", hp: 320, coins: 220 },
+  { name: "황금 왁뿌볼", color: "#eab308", accent: "#a16207", hp: 850, coins: 650 },
+  { name: "우주신 왁뿌볼", color: "#ec4899", accent: "#be185d", hp: 2200, coins: 1800 },
+];
+
+let stage = 0;
+let coins = 0;
+let powerLevel = 1;
+let autoLevel = 0;
+let combo = 0;
+let lastHitTime = 0;
+
+let currentBall = null;
+let currentHp = 40;
+let maxHp = 40;
+
+let ballScaleX = 1;
+let ballScaleY = 1;
+let shakeAmount = 0;
+let cracks = [];
+let particles = [];
+let floatingTexts = [];
+
+/* ==========================================================
+   3. 캔버스 렌더러 & 왁뿌(안경/표정) 그래픽
+   ========================================================== */
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+function spawnBall(stageIdx) {
+  const preset = BALL_PRESETS[stageIdx % BALL_PRESETS.length];
+  const loop = Math.floor(stageIdx / BALL_PRESETS.length) + 1;
+
+  currentBall = {
+    ...preset,
+    name: loop > 1 ? `${preset.name} +${loop-1}` : preset.name,
+    maxHp: preset.hp * loop,
+    rewardCoins: preset.coins * loop
+  };
+  maxHp = currentBall.maxHp;
+  currentHp = maxHp;
+  cracks = [];
+
+  ballScaleX = 0.2;
+  ballScaleY = 0.2;
+  updateUI();
+}
+
+function addCrack() {
+  const angle = Math.random() * Math.PI * 2;
+  const dist = Math.random() * 50;
+  cracks.push({
+    x: Math.cos(angle) * dist,
+    y: Math.sin(angle) * dist,
+    len: 25 + Math.random() * 45,
+    angle: angle + (Math.random() - 0.5) * 0.8
+  });
+}
+
+function createShatterParticles(x, y, color, count, speedMult = 1) {
+  for (let i = 0; i < count; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = (Math.random() * 8 + 3) * speedMult;
+    particles.push({
+      x, y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - 2.5,
+      size: Math.random() * 10 + 4,
+      color: color,
+      alpha: 1,
+      rot: Math.random() * Math.PI,
+      vRot: (Math.random() - 0.5) * 0.4,
+      gravity: 0.32
+    });
+  }
+}
+
+function addFloatingText(x, y, text, color = "#fff", size = 22) {
+  floatingTexts.push({
+    x: x + (Math.random() - 0.5) * 40,
+    y: y - 20,
+    text: text,
+    color: color,
+    size: size,
+    alpha: 1,
+    vy: -2.8
+  });
+}
+
+function hit(x, y, damage, isAuto = false) {
+  initAudio();
+  const now = performance.now();
+
+  if (!isAuto) {
+    if (now - lastHitTime < 900) {
+      combo++;
+    } else {
+      combo = 1;
+    }
+    lastHitTime = now;
+  }
+
+  const comboBonus = 1 + Math.min(combo * 0.08, 2.0);
+  const actualDmg = Math.round(damage * (isAuto ? 1 : comboBonus));
+  currentHp = Math.max(0, currentHp - actualDmg);
+
+  ballScaleX = 1.28;
+  ballScaleY = 0.74;
+  shakeAmount = isAuto ? 3 : Math.min(7 + combo * 0.5, 20);
+
+  if (!isAuto) {
+    playCrispBreakSound(combo);
+    addCrack();
+    createShatterParticles(x, y, currentBall.color, 5, 0.8);
+    addFloatingText(x, y, `-${actualDmg}`, combo > 8 ? "#facc15" : "#fff", combo > 8 ? 26 : 20);
+  }
+
+  if (currentHp <= 0) {
+    playShatterSound();
+    createShatterParticles(canvas.width / 2, canvas.height / 2, currentBall.color, 50, 1.8);
+    shakeAmount = 28;
+    coins += currentBall.rewardCoins;
+    addFloatingText(canvas.width / 2, canvas.height / 2 - 40, `+${currentBall.rewardCoins} 왁코인!`, "#facc15", 32);
+    
+    stage++;
+    spawnBall(stage);
+  }
+
+  updateUI();
+}
+
+// 왁뿌 시그니처 얼굴 (안경 + 킹받는 표정) 드로잉
+function drawWakbbuFace(radius) {
+  const hpRatio = currentHp / maxHp;
+
+  // 1. 네모 둥근 뿔테 안경 (왁두의 핵심 특징)
+  ctx.strokeStyle = "#0f172a";
+  ctx.lineWidth = radius * 0.07;
+  ctx.fillStyle = "rgba(255, 255, 255, 0.35)";
+
+  const gWidth = radius * 0.45;
+  const gHeight = radius * 0.36;
+  const gY = -radius * 0.18;
+  const gDist = radius * 0.26;
+
+  // 왼쪽 렌즈
+  ctx.beginPath();
+  ctx.roundRect(-gDist - gWidth / 2, gY, gWidth, gHeight, 8);
+  ctx.fill();
+  ctx.stroke();
+
+  // 오른쪽 렌즈
+  ctx.beginPath();
+  ctx.roundRect(gDist - gWidth / 2, gY, gWidth, gHeight, 8);
+  ctx.fill();
+  ctx.stroke();
+
+  // 안경 브릿지(가운데 연결부)
+  ctx.beginPath();
+  ctx.moveTo(-gDist + gWidth / 2, gY + gHeight / 2);
+  ctx.lineTo(gDist - gWidth / 2, gY + gHeight / 2);
+  ctx.stroke();
+
+  // 2. 눈동자 (체력에 따라 변함)
+  ctx.fillStyle = "#0f172a";
+  const eyeSize = radius * 0.08;
+  const eyeY = gY + gHeight / 2;
+
+  if (hpRatio > 0.4) {
+    ctx.beginPath();
+    ctx.arc(-gDist, eyeY, eyeSize, 0, Math.PI * 2);
+    ctx.arc(gDist, eyeY, eyeSize, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 하이라이트
+    ctx.fillStyle = "#fff";
+    ctx.beginPath();
+    ctx.arc(-gDist - 2, eyeY - 2, eyeSize * 0.4, 0, Math.PI * 2);
+    ctx.arc(gDist - 2, eyeY - 2, eyeSize * 0.4, 0, Math.PI * 2);
+    ctx.fill();
+  } else {
+    // 억울한 'X X' 눈
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = "#0f172a";
+    [-gDist, gDist].forEach(gx => {
+      ctx.beginPath();
+      ctx.moveTo(gx - 8, eyeY - 8); ctx.lineTo(gx + 8, eyeY + 8);
+      ctx.moveTo(gx + 8, eyeY - 8); ctx.lineTo(gx - 8, eyeY + 8);
+      ctx.stroke();
+    });
+  }
+
+  // 3. 입 (뿌/왁두 특유의 작은 세모 입 또는 울상 입)
+  ctx.beginPath();
+  ctx.lineWidth = 4;
+  ctx.strokeStyle = "#0f172a";
+  if (hpRatio > 0.5) {
+    // 킹받는 앙증맞은 입
+    ctx.arc(0, radius * 0.24, radius * 0.12, 0, Math.PI, false);
+  } else {
+    // 일그러진 울상 입
+    ctx.arc(0, radius * 0.36, radius * 0.16, Math.PI, 0, false);
+  }
+  ctx.stroke();
+}
+
+/* ==========================================================
+   4. 메인 렌더 루프
+   ========================================================== */
+function render() {
+  ctx.save();
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // 화면 흔들림
+  if (shakeAmount > 0.1) {
+    const rx = (Math.random() - 0.5) * shakeAmount;
+    const ry = (Math.random() - 0.5) * shakeAmount;
+    ctx.translate(rx, ry);
+    shakeAmount *= 0.86;
+  }
+
+  const cx = canvas.width / 2;
+  const cy = canvas.height / 2 + 10;
+  const baseRadius = Math.min(canvas.width, canvas.height) * 0.24;
+
+  ballScaleX += (1 - ballScaleX) * 0.2;
+  ballScaleY += (1 - ballScaleY) * 0.2;
+
+  // 왁뿌볼 본체
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.scale(ballScaleX, ballScaleY);
+
+  if (isImageLoaded) {
+    // 커스텀 이미지 (wakbbu.png)가 있을 경우
+    ctx.drawImage(ballImage, -baseRadius, -baseRadius, baseRadius * 2, baseRadius * 2);
+  } else {
+    // 왁뿌볼 벡터 드로잉
+    const grad = ctx.createRadialGradient(-baseRadius * 0.35, -baseRadius * 0.35, baseRadius * 0.1, 0, 0, baseRadius);
+    grad.addColorStop(0, "#ffffff");
+    grad.addColorStop(0.35, currentBall.color);
+    grad.addColorStop(1, currentBall.accent);
+
+    ctx.beginPath();
+    ctx.arc(0, 0, baseRadius, 0, Math.PI * 2);
+    ctx.fillStyle = grad;
+    ctx.fill();
+    ctx.lineWidth = 6;
+    ctx.strokeStyle = "rgba(0,0,0,0.3)";
+    ctx.stroke();
+
+    drawWakbbuFace(baseRadius);
+  }
+
+  // 실시간 크랙(균열) 렌더링
+  ctx.strokeStyle = "rgba(15, 23, 42, 0.9)";
+  ctx.lineWidth = 3.5;
+  ctx.lineCap = "round";
+  cracks.forEach(c => {
+    ctx.beginPath();
+    ctx.moveTo(c.x, c.y);
+    ctx.lineTo(c.x + Math.cos(c.angle) * c.len, c.y + Math.sin(c.angle) * c.len);
+    ctx.stroke();
+  });
+
+  ctx.restore();
+
+  // 파티클
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vy += p.gravity;
+    p.alpha -= 0.022;
+    p.rot += p.vRot;
+
+    if (p.alpha <= 0) {
+      particles.splice(i, 1);
+      continue;
+    }
+
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.rotate(p.rot);
+    ctx.globalAlpha = p.alpha;
+    ctx.fillStyle = p.color;
+    ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+    ctx.restore();
+  }
+
+  // 플로팅 텍스트
+  for (let i = floatingTexts.length - 1; i >= 0; i--) {
+    const t = floatingTexts[i];
+    t.y += t.vy;
+    t.alpha -= 0.024;
+
+    if (t.alpha <= 0) {
+      floatingTexts.splice(i, 1);
+      continue;
+    }
+
+    ctx.save();
+    ctx.globalAlpha = t.alpha;
+    ctx.fillStyle = t.color;
+    ctx.font = `900 ${t.size}px Pretendard, sans-serif`;
+    ctx.textAlign = "center";
+    ctx.shadowColor = "rgba(0,0,0,0.85)";
+    ctx.shadowBlur = 8;
+    ctx.fillText(t.text, t.x, t.y);
+    ctx.restore();
+  }
+
+  ctx.restore();
+  requestAnimationFrame(render);
+}
+
+/* ==========================================================
+   5. UI & 이벤트 핸들링
+   ========================================================== */
+function updateUI() {
+  document.getElementById('ballLevel').textContent = `STAGE ${stage + 1}`;
+  document.getElementById('ballName').textContent = currentBall.name;
+  
+  const hpPercent = Math.max(0, (currentHp / maxHp) * 100);
+  document.getElementById('hpBar').style.width = `${hpPercent}%`;
+  document.getElementById('hpText').textContent = `${Math.ceil(currentHp)} / ${maxHp}`;
+  document.getElementById('coinText').textContent = coins.toLocaleString();
+
+  const comboEl = document.getElementById('comboDisplay');
+  comboEl.textContent = combo > 1 ? `🔥 ${combo} 콤보!` : '';
+
+  const pCost = Math.round(10 * Math.pow(1.35, powerLevel - 1));
+  document.getElementById('powerLv').textContent = powerLevel;
+  document.getElementById('powerVal').textContent = powerLevel;
+  document.getElementById('powerCost').textContent = pCost;
+  document.getElementById('btnPower').disabled = coins < pCost;
+
+  const aCost = Math.round(30 * Math.pow(1.42, autoLevel));
+  document.getElementById('autoLv').textContent = autoLevel;
+  document.getElementById('autoVal').textContent = autoLevel * 3;
+  document.getElementById('autoCost').textContent = aCost;
+  document.getElementById('btnAuto').disabled = coins < aCost;
+}
+
+function handlePointer(e) {
+  const rect = canvas.getBoundingClientRect();
+  const touches = e.changedTouches ? e.changedTouches : [e];
+
+  for (let i = 0; i < touches.length; i++) {
+    const touch = touches[i];
+    const x = touch.clientX - rect.left;
+    const y = touch.clientY - rect.top;
+    
+    const cx = canvas.width / 2;
+    const cy = canvas.height / 2 + 10;
+    const r = Math.min(canvas.width, canvas.height) * 0.28;
+    const dist = Math.hypot(x - cx, y - cy);
+
+    if (dist < r) {
+      hit(x, y, powerLevel, false);
+    }
+  }
+}
+
+canvas.addEventListener('pointerdown', handlePointer);
+
+document.getElementById('btnPower').addEventListener('click', (e) => {
+  e.stopPropagation();
+  const pCost = Math.round(10 * Math.pow(1.35, powerLevel - 1));
+  if (coins >= pCost) {
+    coins -= pCost;
+    powerLevel++;
+    updateUI();
+  }
+});
+
+document.getElementById('btnAuto').addEventListener('click', (e) => {
+  e.stopPropagation();
+  const aCost = Math.round(30 * Math.pow(1.42, autoLevel));
+  if (coins >= aCost) {
+    coins -= aCost;
+    autoLevel++;
+    updateUI();
+  }
+});
+
+setInterval(() => {
+  if (autoLevel > 0) {
+    const dmgPerTick = (autoLevel * 3) / 5;
+    hit(canvas.width / 2, canvas.height / 2, dmgPerTick, true);
+  }
+}, 200);
+
+spawnBall(0);
+requestAnimationFrame(render);
+</script>
+
+</body>
+</html>

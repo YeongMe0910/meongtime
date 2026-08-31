@@ -1,6 +1,7 @@
 // src/app/layout.tsx
 import type { Metadata } from "next";
 import "./globals.css";
+import { ThemeProvider } from "@/context/ThemeContext";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://meongtime.com"),
@@ -9,7 +10,6 @@ export const metadata: Metadata = {
     template: "%s | 멍타임",
   },
   description: "설치 없이 링크만 누르면 바로 플레이 가능한 킬링타임 미니 웹 게임 포털",
-  keywords: ["웹게임", "미니게임", "멍타임", "반응속도", "퀴즈", "킬링타임"],
   openGraph: {
     title: "멍타임 (MeongTime)",
     description: "설치 없이 링크로 바로 즐기는 미니 웹 게임 모음",
@@ -17,9 +17,6 @@ export const metadata: Metadata = {
     siteName: "멍타임",
     locale: "ko_KR",
     type: "website",
-  },
-  twitter: {
-    card: "summary_large_image",
   },
 };
 
@@ -30,8 +27,8 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ko">
-      <body className="bg-slate-950 text-slate-100 antialiased selection:bg-yellow-500 selection:text-black">
-        {children}
+      <body className="antialiased selection:bg-yellow-500 selection:text-black">
+        <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>
   );
