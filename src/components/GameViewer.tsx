@@ -28,7 +28,6 @@ export default function GameViewer({ game }: { game: Game }) {
   
   const { theme, toggleTheme } = useTheme();
 
-  // 최소 가로/세로 제한 (높이 최소 720px 적용)
   const minWidth = game.id === "liar-game" ? 480 : 440;
   const minHeight = 720;
 
@@ -105,7 +104,6 @@ export default function GameViewer({ game }: { game: Game }) {
         window.innerWidth - (leaderboard.length > 0 ? 330 : 64)
       );
 
-      // 최소 720px 보장 Clamping
       const newWidth = Math.max(
         effectiveMinWidth,
         Math.min(maxAllowedWidth, dragStartRef.current.startW + deltaX)
@@ -324,7 +322,7 @@ export default function GameViewer({ game }: { game: Game }) {
           isFull ? "flex-1 p-2" : ""
         }`}
       >
-        {/* 실시간 순위표 */}
+        {/* 실시간 순위표 (진행도 게이지바 포함) */}
         {leaderboard.length > 0 && (
           <aside
             className={`w-full lg:w-72 border rounded-2xl p-4 flex flex-col shadow-xl order-2 lg:order-1 flex-shrink-0 transition-colors ${
@@ -349,7 +347,15 @@ export default function GameViewer({ game }: { game: Game }) {
             <ul className="mt-3 flex lg:flex-col gap-2 overflow-x-auto lg:overflow-y-auto max-h-[350px] lg:max-h-[calc(100vh-280px)]">
               {leaderboard.map((p, idx) => {
                 const isScoreGame = p.score !== undefined;
-                const scoreText = isScoreGame ? `${p.score}점` : p.finished ? `${p.time}s` : p.timedOut ? "시간초과" : `${p.progress}/50`;
+                const percent = Math.min(100, Math.max(0, ((p.progress || 0) / 50) * 100));
+                const isSuccess = p.finished && !p.timedOut;
+                const scoreText = isScoreGame
+                  ? `${p.score}점`
+                  : isSuccess
+                  ? `${p.time}s`
+                  : p.timedOut
+                  ? "시간초과"
+                  : `${p.progress}/50`;
 
                 return (
                   <li
@@ -360,7 +366,7 @@ export default function GameViewer({ game }: { game: Game }) {
                         : isDark ? "bg-slate-950 border-slate-800/80" : "bg-slate-50 border-slate-200"
                     }`}
                   >
-                    <div className="flex items-center justify-between text-xs font-bold mb-1.5 gap-2">
+                    <div className="flex items-center justify-between text-xs font-bold mb-1 gap-2">
                       <div className="flex items-center gap-1.5 min-w-0 flex-1">
                         <span
                           className={`shrink-0 font-black ${
@@ -385,10 +391,40 @@ export default function GameViewer({ game }: { game: Game }) {
                           {p.isMe && <span className="text-yellow-500 font-extrabold ml-1">(나)</span>}
                         </span>
                       </div>
-                      <span className="shrink-0 font-black text-xs text-yellow-400">
+                      <span
+                        className={`shrink-0 font-black text-xs ${
+                          isScoreGame
+                            ? "text-yellow-400"
+                            : isSuccess
+                            ? "text-emerald-500"
+                            : p.timedOut
+                            ? "text-rose-500"
+                            : isDark
+                            ? "text-yellow-400"
+                            : "text-amber-600"
+                        }`}
+                      >
                         {scoreText}
                       </span>
                     </div>
+
+                    {/* 1 to 50 전용 실시간 진행도 게이지바 */}
+                    {!isScoreGame && (
+                      <div className={`w-full h-1.5 rounded-full overflow-hidden mt-1.5 ${
+                        isDark ? "bg-slate-800" : "bg-slate-200"
+                      }`}>
+                        <div
+                          className={`h-full transition-all duration-150 ${
+                            isSuccess
+                              ? "bg-emerald-500"
+                              : p.timedOut
+                              ? "bg-rose-500"
+                              : "bg-blue-500"
+                          }`}
+                          style={{ width: `${percent}%` }}
+                        />
+                      </div>
+                    )}
                   </li>
                 );
               })}
@@ -396,7 +432,7 @@ export default function GameViewer({ game }: { game: Game }) {
           </aside>
         )}
 
-        {/* 최소 높이 720px 보장 게임 프레임 */}
+        {/* 메인 게임 프레임 */}
         <div
           ref={containerRef}
           style={
@@ -441,7 +477,7 @@ export default function GameViewer({ game }: { game: Game }) {
           {!isFull && (
             <div
               onMouseDown={handleMouseDown}
-              title="마우스로 드래그하여 화면 크기 조절 (최소 높이 720px)"
+              title="마우스로 드래그하여 화면 크기 조절"
               className={`absolute bottom-1 right-1 w-6 h-6 z-30 cursor-se-resize flex items-end justify-end p-1 select-none transition-colors ${
                 isDark ? "text-slate-500 hover:text-yellow-400" : "text-slate-400 hover:text-amber-500"
               }`}
