@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>반응속도 테스트</title>
+  <style>
+    * { box-sizing: border-box; user-select: none; }
+    body {
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      text-align: center;
+      transition: background-color 0.15s ease;
+      cursor: pointer;
+    }
+    .waiting { background-color: #ef4444; color: white; }
+    .ready { background-color: #22c55e; color: white; }
+    .idle { background-color: #0f172a; color: #f8fafc; }
+    h2 { font-size: 2rem; margin: 0 0 10px 0; }
+    p { font-size: 1.1rem; opacity: 0.9; margin: 0; }
+  </style>
+</head>
+<body class="idle" id="screen">
+  <div id="content">
+    <h2>⚡ 반응속도 테스트</h2>
+    <p>화면을 클릭해서 시작하세요</p>
+  </div>
+
+  <script>
+    const screen = document.getElementById('screen');
+    const content = document.getElementById('content');
+    
+    let state = 'idle'; // idle, waiting, ready, done
+    let startTime = 0;
+    let timerId = null;
+
+    screen.addEventListener('pointerdown', () => {
+      if (state === 'idle' || state === 'done') {
+        state = 'waiting';
+        screen.className = 'waiting';
+        content.innerHTML = '<h2>초록색이 되면 클릭하세요!</h2><p>기다리는 중...</p>';
+        
+        const randomDelay = Math.floor(Math.random() * 2500) + 1500;
+        timerId = setTimeout(() => {
+          state = 'ready';
+          screen.className = 'ready';
+          content.innerHTML = '<h2>지금 클릭하세요!!</h2>';
+          startTime = performance.now();
+        }, randomDelay);
+
+      } else if (state === 'waiting') {
+        clearTimeout(timerId);
+        state = 'done';
+        screen.className = 'idle';
+        content.innerHTML = '<h2>너무 일찍 눌렀습니다! 😅</h2><p>다시 클릭하여 도전하세요</p>';
+
+      } else if (state === 'ready') {
+        const elapsed = Math.round(performance.now() - startTime);
+        state = 'done';
+        screen.className = 'idle';
+        content.innerHTML = `<h2>${elapsed} ms</h2><p>멋진 순발력이네요! 다시 하려면 클릭하세요</p>`;
+      }
+    });
+  </script>
+</body>
+</html>
