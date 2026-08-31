@@ -7,6 +7,7 @@ export interface Game {
   thumbnail: string;
   gamePath: string;
   category: "반응속도" | "퀴즈" | "미니게임" | "퍼즐" | "심리추리";
+  hidden?: boolean;
 }
 
 export const GAMES: Game[] = [
