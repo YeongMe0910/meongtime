@@ -309,7 +309,7 @@ function processKick(angle, speed) {
     setTimeout(() => { resolveTurn('MISS', targetX, null); }, reactionTime + 500);
   } else {
     if (isSinglePlayer && gameState.currentTurn === 1) {
-      const aiReactionTime = 200 + Math.random() * 200; 
+      const aiReactionTime = 250 + Math.random() * 200; 
       
       currentKickData.timeout = setTimeout(() => {
         let aiGkTargetX;
