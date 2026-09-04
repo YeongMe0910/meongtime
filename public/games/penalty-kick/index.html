@@ -287,8 +287,8 @@ let currentKickData = null;
 
 function processKick(angle, speed) {
   speed = Math.max(0.5, Math.min(speed, 4.0));
-  let reactionTime = 400 - ((speed - 0.5) / 3.5) * 250;
-  reactionTime = Math.max(150, Math.min(400, Math.floor(reactionTime)));
+  let reactionTime = 500 - ((speed - 0.5) / 3.5) * 250;
+  reactionTime = Math.max(250, Math.min(500, Math.floor(reactionTime)));
 
   const dy = GOAL_Y - BALL_START_Y;
   const dx = dy / Math.tan(angle);
@@ -316,7 +316,7 @@ function processKick(angle, speed) {
         const isLeft = targetX < 158;
         const isRight = targetX > 242;
         
-        if (Math.random() < 0.65) {
+        if (Math.random() < 0.2) {
            aiGkTargetX = targetX + (Math.random() * 30 - 15); // 공 위치 근처 방어
         } else {
            aiGkTargetX = GOAL_X1 + Math.random() * (GOAL_X2 - GOAL_X1);
@@ -324,9 +324,18 @@ function processKick(angle, speed) {
         processGkInput(aiGkTargetX, aiReactionTime);
       }, aiReactionTime);
     } else {
-      currentKickData.timeout = setTimeout(() => {
-        resolveTurn('GOAL', targetX, null);
-      }, reactionTime + 1000);
+        currentKickData.timeout = setTimeout(() => {
+        // 아무 입력이 없으면 골키퍼의 기본 위치(정중앙 X좌표: 200)로 간주
+        const defaultGkX = 200;
+        const saveRange = 25; // 이전 단계에서 수정한 방어 반경을 똑같이 적용
+        
+        // 공이 가만히 있는 골키퍼 품(가운데)으로 정확히 날아왔다면 방어 성공 처리
+        if (Math.abs(currentKickData.targetX - defaultGkX) <= saveRange) {
+          resolveTurn('SAVE', currentKickData.targetX, defaultGkX);
+        } else {
+          resolveTurn('GOAL', currentKickData.targetX, defaultGkX);
+        }
+      }, reactionTime + 150);
     }
   }
 }
@@ -337,15 +346,34 @@ function processGkInput(gkTargetX, timeTaken) {
 
   let result = 'GOAL';
   
-  if(timeTaken <= currentKickData.reactionTime) {
-    // ✅ 장갑 방어 범위 대폭 상향 (반경 110px 이내면 무조건 방어!)
-    const saveRange = 110;
+  // 유예 시간과 방어 반경(75)은 이전 단계에서 조절하신 최적의 수치를 유지합니다.
+  if(timeTaken <= currentKickData.reactionTime + 150) {
+    const saveRange = 25; 
     if(Math.abs(currentKickData.targetX - gkTargetX) <= saveRange) {
       result = 'SAVE';
     }
   }
 
-  resolveTurn(result, currentKickData.targetX, gkTargetX);
+  // [수정 1] 조작 즉시 골키퍼 다이빙 애니메이션만 단독으로 실행하여 조작감 유지
+  const startT = performance.now();
+  const startGkX = animState.gkX;
+  function animGk() {
+    const t = performance.now() - startT;
+    const prog = Math.min(1, t / 150);
+    animState.gkX = startGkX + (Math.max(GOAL_X1, Math.min(GOAL_X2, gkTargetX)) - startGkX) * prog;
+    drawPitch();
+    if(prog < 1) requestAnimationFrame(animGk);
+  }
+  requestAnimationFrame(animGk);
+
+  // [수정 2] 공이 날아가는 총 시간에서 지금까지 걸린 시간을 빼서 남은 대기 시간 계산
+  const totalAnimTime = currentKickData.reactionTime + 150;
+  const remainingTime = Math.max(0, totalAnimTime - timeTaken);
+
+  // 남은 시간만큼 정확히 기다린 후 텍스트 알림 및 점수 반영
+  setTimeout(() => {
+    resolveTurn(result, currentKickData.targetX, gkTargetX);
+  }, remainingTime);
 }
 
 function resolveTurn(resultText, ballTargetX, gkTargetX) {
@@ -458,6 +486,7 @@ function drawPitch() {
 let dragStartX=0, dragStartY=0, dragTime=0, isDragging=false;
 let gkListenTime = 0;
 
+// 수정된 입력 처리 로직
 function enableDrag(role) {
   isDragging = false;
   cvs.onpointerdown = (e) => {
@@ -477,10 +506,30 @@ function enableDrag(role) {
     const ey = (e.clientY - rect.top) * (cvs.height/rect.height);
     const dt = performance.now() - dragTime;
     
-    const dist = Math.hypot(ex - dragStartX, ey - dragStartY);
-    if(dist < 20) return; 
+    // ----------------------------------------------------
+    // [개선된 골키퍼 로직]
+    // 복잡한 각도 계산과 아래로 향하는 드래그 취소 조건을 없애고, 
+    // 터치/스와이프가 끝난 지점의 X 좌표로 직관적으로 다이빙합니다.
+    // ----------------------------------------------------
+    if (role === 'GK') {
+      enableDrag('NONE');
+      const timeTaken = performance.now() - gkListenTime;
+      
+      // 화면 내 최종 X 좌표를 골대 범위(GOAL_X1 ~ GOAL_X2)에 맞춰 매핑
+      const targetX = Math.max(GOAL_X1, Math.min(GOAL_X2, ex));
 
-    if(ey > dragStartY + 10) return;
+      if(isHost) processGkInput(targetX, timeTaken);
+      else conn.send({type: 'GK_INPUT', targetX, timeTaken});
+      return; // 골키퍼 처리는 여기서 종료
+    }
+
+    // ----------------------------------------------------
+    // [기존 키커 로직]
+    // ----------------------------------------------------
+    const dist = Math.hypot(ex - dragStartX, ey - dragStartY);
+    if(dist < 20) return; // 너무 짧은 드래그 무시
+
+    if(ey > dragStartY + 10) return; // 아래로 드래그하면 취소
 
     const angle = Math.atan2(ey - dragStartY, ex - dragStartX);
     const speed = dist / dt;
@@ -490,18 +539,6 @@ function enableDrag(role) {
       if(isHost) processKick(angle, speed);
       else conn.send({type: 'KICK_INPUT', angle, speed});
     } 
-    else if (role === 'GK') {
-      enableDrag('NONE');
-      const timeTaken = performance.now() - gkListenTime;
-      
-      // ✅ 골키퍼 방어 시 드래그한 방향(X 좌표)을 기준으로 골대 라인 상의 어느 위치로 다이빙할지 계산
-      const dy = GOAL_Y - BALL_START_Y;
-      const dx = dy / Math.tan(angle);
-      const targetX = Math.max(GOAL_X1, Math.min(GOAL_X2, BALL_START_X + dx));
-
-      if(isHost) processGkInput(targetX, timeTaken);
-      else conn.send({type: 'GK_INPUT', targetX, timeTaken});
-    }
   };
 }
 
