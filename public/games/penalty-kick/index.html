@@ -1,0 +1,602 @@
+<!-- public/games/penalty-kick/index.html -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>승부차기 1vs1</title>
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <style>
+    * { box-sizing: border-box; user-select: none; -webkit-user-select: none; margin: 0; padding: 0; }
+    :root {
+      --bg-color: #0f172a; --card-bg: #1e293b; --card-border: #334155; --text-main: #f8fafc;
+      --text-sub: #94a3b8; --input-bg: #0f172a; --accent: #10b981; --accent-text: #ffffff;
+      --pitch-bg: #14532d; --pitch-lines: #ffffff;
+    }
+    body { width: 100%; height: 100dvh; background: var(--bg-color); color: var(--text-main); font-family: "Pretendard", sans-serif; display: flex; justify-content: center; align-items: center; overflow: hidden; }
+    #app { width: 100%; max-width: 480px; height: 100%; display: flex; flex-direction: column; padding: 12px; position: relative; }
+    .view { display: none; flex-direction: column; flex: 1; justify-content: center; align-items: center; width: 100%; }
+    .view.active { display: flex; }
+    
+    .card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; padding: 24px; width: 100%; box-shadow: 0 10px 25px rgba(0,0,0,0.3); text-align: center; }
+    h1 { font-size: 24px; font-weight: 900; color: var(--accent); margin-bottom: 6px; }
+    .input-group { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
+    input { background: var(--input-bg); border: 1px solid var(--card-border); color: var(--text-main); padding: 12px; border-radius: 10px; font-weight: 700; text-align: center; outline: none; }
+    button { background: var(--accent); color: var(--accent-text); border: none; padding: 12px; border-radius: 10px; font-weight: 800; font-size: 15px; cursor: pointer; transition: 0.1s; }
+    button:active { transform: scale(0.98); }
+    button.secondary { background: #334155; }
+    .btn-solo { background: #3b82f6; color: #fff; margin-bottom: 4px; }
+    
+    .scoreboard { width: 100%; display: flex; justify-content: space-between; align-items: center; background: var(--card-bg); border: 1px solid var(--card-border); padding: 12px 16px; border-radius: 12px; margin-bottom: 8px; }
+    .score-block { display: flex; flex-direction: column; align-items: center; width: 30%; }
+    .score-name { font-size: 11px; color: var(--text-sub); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+    .score-num { font-size: 28px; font-weight: 900; }
+    .score-center { font-size: 12px; font-weight: 800; color: var(--accent); display: flex; flex-direction: column; align-items: center; }
+    
+    .history-dots { display: flex; gap: 4px; margin-top: 6px; }
+    .dot { width: 12px; height: 12px; border-radius: 50%; background: #334155; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 900; }
+    .dot.o { background: #10b981; color: #fff; } .dot.x { background: #ef4444; color: #fff; }
+    
+    #gameCanvas { width: 100%; aspect-ratio: 4/5; background: var(--pitch-bg); border-radius: 12px; border: 2px solid var(--pitch-lines); box-shadow: inset 0 0 40px rgba(0,0,0,0.5); touch-action: none; cursor: crosshair; }
+    
+    .status-bar { width: 100%; text-align: center; padding: 12px; font-size: 15px; font-weight: 800; margin-top: 8px; border-radius: 8px; background: rgba(0,0,0,0.3); border: 1px solid var(--card-border); min-height: 46px; display: flex; align-items: center; justify-content: center; }
+    .status-highlight { color: var(--accent); }
+    .status-danger { color: #ef4444; }
+  </style>
+</head>
+<body>
+
+<div id="app">
+  <!-- 메뉴 -->
+  <div id="viewMenu" class="view active">
+    <div class="card">
+      <h1>⚽ 승부차기 대결</h1>
+      <p style="font-size: 12px; color: var(--text-sub);">드래그 속도로 파워를 결정하세요!<br>빠를수록 골키퍼의 반응시간이 짧아집니다.</p>
+      <div class="input-group">
+        <input type="text" id="nickInput" placeholder="닉네임 입력 (기본: Player)" maxlength="8" />
+        <button id="btnSolo" class="btn-solo">혼자하기 (vs COM)</button>
+        <button id="btnCreate">방 만들기 (멀티플레이)</button>
+        <div style="display: flex; gap: 6px;">
+          <input type="text" id="codeInput" placeholder="방 코드" maxlength="4" style="flex: 1; text-transform: uppercase;" />
+          <button id="btnJoin" class="secondary" style="flex: 1;">입장</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 대기실 -->
+  <div id="viewLobby" class="view">
+    <div class="card">
+      <h2 style="font-size: 18px; margin-bottom: 12px;">대기실</h2>
+      <div style="font-size: 32px; font-weight: 900; letter-spacing: 4px; color: var(--accent); background: #000; padding: 12px; border-radius: 12px; margin-bottom: 12px;" id="roomCodeDisplay">ABCD</div>
+      <p style="font-size: 13px; color: var(--text-sub); margin-bottom: 16px;" id="lobbyDesc">상대방이 코드를 입력하여 접속을 기다립니다.<br>(최대 2인)</p>
+      <div style="text-align: left; background: var(--input-bg); padding: 12px; border-radius: 8px; font-size: 14px; font-weight: 700;">
+        1P (나): <span id="lobbyP1" style="color:var(--accent);">대기중</span><br>
+        2P (상대): <span id="lobbyP2" style="color:#ef4444;">접속 대기중...</span>
+      </div>
+      <button id="btnStart" style="margin-top: 16px; width: 100%; display: none;">대결 시작!</button>
+    </div>
+  </div>
+
+  <!-- 인게임 -->
+  <div id="viewGame" class="view">
+    <div class="scoreboard">
+      <div class="score-block">
+        <span class="score-name" id="sbName1">Player 1</span>
+        <span class="score-num" id="sbScore1">0</span>
+        <div class="history-dots" id="sbHist1"></div>
+      </div>
+      <div class="score-center">
+        <span id="sbRound">ROUND 1</span>
+        <span style="font-size: 10px; color: var(--text-sub); margin-top: 2px;" id="sbTurnInfo">키커: P1</span>
+      </div>
+      <div class="score-block">
+        <span class="score-name" id="sbName2">Player 2</span>
+        <span class="score-num" id="sbScore2">0</span>
+        <div class="history-dots" id="sbHist2"></div>
+      </div>
+    </div>
+    <canvas id="gameCanvas" width="400" height="500"></canvas>
+    <div class="status-bar" id="gameStatus">상대방을 기다리는 중...</div>
+  </div>
+
+  <!-- 결과 -->
+  <div id="viewResult" class="view">
+    <div class="card">
+      <h1 id="resTitle" style="font-size: 32px; margin-bottom: 8px;">승리!</h1>
+      <p id="resDesc" style="font-size: 14px; color: var(--text-sub); margin-bottom: 24px;">5-4 로 승리했습니다.</p>
+      <button id="btnLobby" style="width: 100%;">메인으로 돌아가기</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// P2P Setup
+let peer = null, conn = null;
+let isHost = false, roomCode = '';
+let myId = '', myNick = '', oppNick = '';
+let gameState = null; 
+let isSinglePlayer = false;
+
+// Canvas Context
+const cvs = document.getElementById('gameCanvas');
+const ctx = cvs.getContext('2d');
+
+// UI Elements
+const views = { menu: document.getElementById('viewMenu'), lobby: document.getElementById('viewLobby'), game: document.getElementById('viewGame'), result: document.getElementById('viewResult') };
+function showView(v) { Object.values(views).forEach(el => el.classList.remove('active')); views[v].classList.add('active'); }
+
+// 혼자하기 모드 시작
+document.getElementById('btnSolo').onclick = () => {
+  myNick = document.getElementById('nickInput').value.trim() || 'Player';
+  oppNick = 'COM';
+  isSinglePlayer = true;
+  isHost = true; // 싱글 플레이어도 내부적으론 호스트 권한으로 처리
+  roomCode = 'SOLO';
+  setupLobby();
+};
+
+document.getElementById('btnCreate').onclick = () => {
+  myNick = document.getElementById('nickInput').value.trim() || 'Player1';
+  isSinglePlayer = false; isHost = true; 
+  roomCode = Math.random().toString(36).substring(2,6).toUpperCase();
+  peer = new Peer(`meong-pk-${roomCode}`);
+  peer.on('open', id => { myId = id; setupLobby(); });
+  peer.on('connection', c => {
+    if(conn) { c.send({type: 'REJECT', msg: '방이 꽉 찼습니다.'}); setTimeout(()=>c.close(), 500); return; }
+    conn = c;
+    conn.on('data', data => handleHostData(data));
+    conn.on('close', () => { conn = null; setupLobby(); });
+  });
+};
+
+document.getElementById('btnJoin').onclick = () => {
+  myNick = document.getElementById('nickInput').value.trim() || 'Player2';
+  roomCode = document.getElementById('codeInput').value.trim().toUpperCase();
+  isSinglePlayer = false; isHost = false; peer = new Peer();
+  peer.on('open', id => {
+    myId = id; conn = peer.connect(`meong-pk-${roomCode}`, { reliable: true });
+    conn.on('open', () => { conn.send({type: 'JOIN', nick: myNick}); });
+    conn.on('data', data => handleGuestData(data));
+    conn.on('close', () => alert('방장과 연결이 끊겼습니다.'));
+  });
+};
+
+function setupLobby() {
+  showView('lobby');
+  document.getElementById('roomCodeDisplay').textContent = roomCode;
+  document.getElementById('lobbyP1').textContent = myNick;
+  
+  if (isSinglePlayer) {
+    document.getElementById('lobbyP2').textContent = oppNick;
+    document.getElementById('lobbyDesc').textContent = '인공지능과 대결을 진행합니다.';
+    document.getElementById('btnStart').style.display = 'block';
+  } else if(isHost) {
+    document.getElementById('lobbyP2').textContent = conn ? oppNick : '접속 대기중...';
+    document.getElementById('lobbyDesc').innerHTML = '상대방이 코드를 입력하여 접속을 기다립니다.<br>(최대 2인)';
+    document.getElementById('btnStart').style.display = conn ? 'block' : 'none';
+  }
+}
+
+// Game Logic Data
+const MAX_ROUNDS = 5;
+const GOAL_X1 = 75, GOAL_X2 = 325, GOAL_Y = 80;
+const BALL_START_X = 200, BALL_START_Y = 420;
+
+// Host Flow
+function handleHostData(data) {
+  if(data.type === 'JOIN') {
+    oppNick = data.nick;
+    conn.send({type: 'JOIN_ACK', hostNick: myNick});
+    setupLobby();
+  } else if (data.type === 'KICK_INPUT') {
+    processKick(data.angle, data.speed);
+  } else if (data.type === 'GK_INPUT') {
+    processGkInput(data.angle, data.timeTaken);
+  }
+}
+
+// Guest Flow
+function handleGuestData(data) {
+  if(data.type === 'JOIN_ACK') { oppNick = data.hostNick; setupLobby(); document.getElementById('lobbyP2').textContent = myNick; document.getElementById('lobbyP1').textContent = oppNick; }
+  else if(data.type === 'STATE_UPDATE') { syncState(data.state); }
+  else if(data.type === 'BALL_FIRED') { playBallAnimation(data.angle, data.reactionTime, data.isOut); }
+  else if(data.type === 'RESULT_ANIM') { playResultAnimation(data.result, data.ballTargetX, data.gkAngle); }
+}
+
+document.getElementById('btnStart').onclick = () => {
+  if(!isSinglePlayer && (!isHost || !conn)) return;
+  gameState = {
+    round: 1, currentTurn: 1, // turn 1: Host kicks, turn 2: Guest kicks
+    p1: { nick: myNick, score: 0, hist: [] },
+    p2: { nick: oppNick, score: 0, hist: [] },
+    phase: 'KICKER_INPUT' // KICKER_INPUT -> WAITING_GK -> ANIMATING
+  };
+  broadcastState();
+};
+
+function broadcastState() {
+  syncState(gameState);
+  if (!isSinglePlayer && conn) {
+    conn.send({type: 'STATE_UPDATE', state: gameState});
+  }
+}
+
+function syncState(state) {
+  gameState = state;
+  showView('game');
+  document.getElementById('sbName1').textContent = state.p1.nick;
+  document.getElementById('sbScore1').textContent = state.p1.score;
+  document.getElementById('sbName2').textContent = state.p2.nick;
+  document.getElementById('sbScore2').textContent = state.p2.score;
+  document.getElementById('sbRound').textContent = state.round > 5 ? `서든데스 (${state.round})` : `ROUND ${state.round}`;
+  
+  const isHostKicker = state.currentTurn === 1;
+  const kickerNick = isHostKicker ? state.p1.nick : state.p2.nick;
+  document.getElementById('sbTurnInfo').textContent = `키커: ${kickerNick}`;
+
+  renderHistory('sbHist1', state.p1.hist);
+  renderHistory('sbHist2', state.p2.hist);
+
+  amIKicker = (isHost && isHostKicker) || (!isHost && !isHostKicker);
+  
+  resetCanvas();
+  
+  if(state.phase === 'KICKER_INPUT') {
+    if(amIKicker) {
+      setStatus('공을 골대 방향으로 빠르게 드래그하세요!', 'status-highlight');
+      enableDrag('KICK');
+    } else {
+      setStatus('상대방이 킥을 준비 중입니다...');
+      enableDrag('NONE');
+      
+      // 싱글 플레이어 모드이고 COM의 킥 턴일 때 자동 킥 수행
+      if (isSinglePlayer && state.currentTurn === 2) {
+        setTimeout(executeAiKick, 1200 + Math.random() * 800);
+      }
+    }
+  }
+}
+
+// AI 키커 로직 (혼자하기)
+function executeAiKick() {
+  if (gameState.phase !== 'KICKER_INPUT' || gameState.currentTurn !== 2) return;
+  // 좌(-1.81), 중(-1.57), 우(-1.32) 라디안 근처를 조준
+  const sectors = [-1.85, -1.57, -1.29];
+  // 선택한 섹터에 살짝 노이즈를 섞어 현실감 부여
+  const angle = sectors[Math.floor(Math.random() * sectors.length)] + (Math.random() * 0.1 - 0.05);
+  // 속도 1.5 ~ 3.5 (어느정도 빠름)
+  const speed = 1.5 + Math.random() * 2.0; 
+  processKick(angle, speed);
+}
+
+function renderHistory(id, hist) {
+  const el = document.getElementById(id); el.innerHTML = '';
+  hist.forEach(res => {
+    const dot = document.createElement('div'); dot.className = `dot ${res==='O'?'o':'x'}`; dot.textContent = res; el.appendChild(dot);
+  });
+}
+
+function setStatus(msg, className='') {
+  const el = document.getElementById('gameStatus');
+  el.textContent = msg; el.className = `status-bar ${className}`;
+}
+
+// Host Physics Processing
+let currentKickData = null;
+
+function processKick(angle, speed) {
+  // speed: px/ms (typically 0.5 to 4.0)
+  speed = Math.max(0.5, Math.min(speed, 4.0));
+  
+  // Reaction time calc: 0.5 -> 400ms, 4.0 -> 150ms
+  let reactionTime = 400 - ((speed - 0.5) / 3.5) * 250;
+  reactionTime = Math.max(150, Math.min(400, Math.floor(reactionTime)));
+
+  // Calculate destination X at Goal Line (Y=80)
+  const dy = GOAL_Y - BALL_START_Y; // -340
+  const dx = dy / Math.tan(angle);
+  const targetX = BALL_START_X + dx;
+
+  const isOut = targetX < GOAL_X1 || targetX > GOAL_X2 || angle > 0;
+  
+  currentKickData = { angle, targetX, reactionTime, isOut };
+  gameState.phase = 'WAITING_GK';
+  broadcastState();
+
+  // Send visual trigger to GK
+  const packet = { type: 'BALL_FIRED', angle, reactionTime, isOut };
+  if (!isSinglePlayer && conn) conn.send(packet);
+  
+  playBallAnimation(angle, reactionTime, isOut);
+
+  if(isOut) {
+    // 밖으로 나갈 경우 즉시 실패 처리
+    setTimeout(() => { resolveTurn('MISS', targetX, null); }, reactionTime + 500);
+  } else {
+    // 싱글 플레이어 모드에서 플레이어가 차고 AI(COM)가 막아야 할 경우
+    if (isSinglePlayer && gameState.currentTurn === 1) {
+      // 평균 반응시간 300ms (200~400ms 사이 랜덤)
+      const aiReactionTime = 200 + Math.random() * 200; 
+      
+      currentKickData.timeout = setTimeout(() => {
+        let gkAngle;
+        const isLeft = targetX < 158;
+        const isRight = targetX > 242;
+        
+        // 65% 확률로 정확한 방향 예측, 35% 확률로 엉뚱한 방향 다이빙
+        if (Math.random() < 0.65) {
+           if (isLeft) gkAngle = -2.35; // 좌
+           else if (isRight) gkAngle = -0.78; // 우
+           else gkAngle = -1.57; // 중앙
+        } else {
+           const options = [-2.35, -1.57, -0.78];
+           gkAngle = options[Math.floor(Math.random() * options.length)];
+        }
+        processGkInput(gkAngle, aiReactionTime);
+      }, aiReactionTime);
+    } else {
+      // 멀티플레이 및 플레이어가 방어할 경우의 타임아웃
+      currentKickData.timeout = setTimeout(() => {
+        resolveTurn('GOAL', targetX, null);
+      }, reactionTime + 1000);
+    }
+  }
+}
+
+function processGkInput(gkAngle, timeTaken) {
+  if(!currentKickData || currentKickData.isOut) return;
+  clearTimeout(currentKickData.timeout);
+
+  let result = 'GOAL';
+  // 골키퍼 반응 속도가 공의 제한시간보다 빨랐을 때 방어 판정
+  if(timeTaken <= currentKickData.reactionTime) {
+    const gkTargetX = 200 + (-100) / Math.tan(gkAngle);
+    
+    // 타겟 지점을 3등분(좌/중/우)하여 키커와 골키퍼의 방향 매칭 검사
+    const getSector = (tx) => {
+      if(tx < 158) return 'L';
+      if(tx > 242) return 'R';
+      return 'C';
+    };
+
+    if(getSector(currentKickData.targetX) === getSector(gkTargetX)) {
+      result = 'SAVE';
+    }
+  }
+
+  resolveTurn(result, currentKickData.targetX, gkAngle);
+}
+
+function resolveTurn(resultText, ballTargetX, gkAngle) {
+  const isGoal = resultText === 'GOAL';
+  const pData = gameState.currentTurn === 1 ? gameState.p1 : gameState.p2;
+  
+  if(isGoal) {
+    pData.score++;
+    pData.hist.push('O');
+  } else {
+    pData.hist.push('X');
+  }
+
+  // Animation broadcast
+  const animPacket = { type: 'RESULT_ANIM', result: resultText, ballTargetX, gkAngle };
+  if(isHost) playResultAnimation(resultText, ballTargetX, gkAngle);
+  if(!isSinglePlayer && conn) conn.send(animPacket);
+
+  setTimeout(() => {
+    // Next Turn Logic
+    if(gameState.currentTurn === 1) {
+      gameState.currentTurn = 2;
+      gameState.phase = 'KICKER_INPUT';
+      broadcastState();
+    } else {
+      // End of round. Check Sudden Death or Winner.
+      const r = gameState.round;
+      const diff = gameState.p1.score - gameState.p2.score;
+      const remKicks = MAX_ROUNDS - r;
+
+      let gameOver = false;
+      
+      if(r < MAX_ROUNDS) {
+        // 남은 킥 횟수로도 점수 차이를 뒤집지 못하면 조기 종료
+        if (Math.abs(diff) > remKicks) gameOver = true;
+      } else {
+        // 5라운드 이후 서든데스 돌입 (점수 차이가 날 때까지)
+        if (diff !== 0) gameOver = true;
+      }
+
+      if(gameOver) {
+        endGame();
+      } else {
+        gameState.round++;
+        gameState.currentTurn = 1;
+        gameState.phase = 'KICKER_INPUT';
+        broadcastState();
+      }
+    }
+  }, 2500);
+}
+
+function endGame() {
+  let wName = gameState.p1.score > gameState.p2.score ? gameState.p1.nick : gameState.p2.nick;
+  if(gameState.p1.score === gameState.p2.score) wName = '무승부 (에러)';
+  
+  showView('result');
+  document.getElementById('resTitle').textContent = gameState.p1.score > gameState.p2.score ? '🎉 승리!' : '💀 패배...';
+  document.getElementById('resDesc').textContent = `최종 스코어 ${gameState.p1.score} : ${gameState.p2.score}`;
+}
+
+document.getElementById('btnLobby').onclick = () => { 
+  if (isSinglePlayer) {
+    showView('menu'); // 싱글 모드는 끝나면 메인 메뉴로
+  } else {
+    setupLobby();
+  }
+};
+
+// ==========================================
+// Canvas & Input Rendering
+// ==========================================
+let amIKicker = false;
+let animState = {
+  ballX: BALL_START_X, ballY: BALL_START_Y,
+  gkX: 200, gkY: 80,
+  moving: false
+};
+
+function resetCanvas() {
+  animState.ballX = BALL_START_X; animState.ballY = BALL_START_Y;
+  animState.gkX = 200; animState.gkY = 80;
+  animState.moving = false;
+  drawPitch();
+}
+
+function drawPitch() {
+  ctx.clearRect(0,0,cvs.width,cvs.height);
+  // Goal Post
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 6;
+  ctx.beginPath(); ctx.moveTo(GOAL_X1, GOAL_Y); ctx.lineTo(GOAL_X1, 30); ctx.lineTo(GOAL_X2, 30); ctx.lineTo(GOAL_X2, GOAL_Y); ctx.stroke();
+  // Netting pattern
+  ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+  for(let i=GOAL_X1; i<=GOAL_X2; i+=15) { ctx.beginPath(); ctx.moveTo(i, 30); ctx.lineTo(i, GOAL_Y); ctx.stroke(); }
+  for(let i=30; i<=GOAL_Y; i+=10) { ctx.beginPath(); ctx.moveTo(GOAL_X1, i); ctx.lineTo(GOAL_X2, i); ctx.stroke(); }
+  
+  // Penalty box lines
+  ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.lineWidth = 3;
+  ctx.strokeRect(30, GOAL_Y, 340, 120); // Penalty area
+  ctx.beginPath(); ctx.arc(200, 200, 40, 0, Math.PI); ctx.stroke(); // D-curve
+  
+  // Ball mark
+  ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(BALL_START_X, BALL_START_Y, 4, 0, Math.PI*2); ctx.fill();
+
+  // Draw GK
+  ctx.font = '40px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('🧤', animState.gkX, animState.gkY);
+
+  // Draw Ball
+  ctx.font = '24px Arial';
+  ctx.fillText('⚽', animState.ballX, animState.ballY);
+}
+
+// Input Handling
+let dragStartX=0, dragStartY=0, dragTime=0, isDragging=false;
+let gkListenTime = 0, gkMaxTime = 0;
+
+function enableDrag(role) {
+  isDragging = false;
+  cvs.onpointerdown = (e) => {
+    if(role === 'NONE') return;
+    const rect = cvs.getBoundingClientRect();
+    dragStartX = (e.clientX - rect.left) * (cvs.width/rect.width);
+    dragStartY = (e.clientY - rect.top) * (cvs.height/rect.height);
+    dragTime = performance.now();
+    isDragging = true;
+  };
+
+  cvs.onpointerup = (e) => {
+    if(!isDragging) return;
+    isDragging = false;
+    const rect = cvs.getBoundingClientRect();
+    const ex = (e.clientX - rect.left) * (cvs.width/rect.width);
+    const ey = (e.clientY - rect.top) * (cvs.height/rect.height);
+    const dt = performance.now() - dragTime;
+    
+    const dist = Math.hypot(ex - dragStartX, ey - dragStartY);
+    if(dist < 30) return; // Ignore taps
+
+    // Must swipe UP (dy < 0)
+    if(ey > dragStartY + 20) return;
+
+    const angle = Math.atan2(ey - dragStartY, ex - dragStartX);
+    const speed = dist / dt;
+
+    if(role === 'KICK') {
+      enableDrag('NONE');
+      if(isHost) processKick(angle, speed);
+      else conn.send({type: 'KICK_INPUT', angle, speed});
+    } 
+    else if (role === 'GK') {
+      enableDrag('NONE');
+      const timeTaken = performance.now() - gkListenTime;
+      if(isHost) processGkInput(angle, timeTaken);
+      else conn.send({type: 'GK_INPUT', angle, timeTaken});
+    }
+  };
+}
+
+function playBallAnimation(angle, reactionTime, isOut) {
+  enableDrag('NONE');
+  animState.moving = true;
+  
+  if(!amIKicker && !isOut) {
+    setStatus(`방어하세요! 남은 시간: ${reactionTime}ms`, 'status-danger');
+    
+    // 플레이어가 골키퍼일 때만 드래그 방어 활성화
+    if (!isSinglePlayer || gameState.currentTurn === 2) {
+      enableDrag('GK');
+    }
+    gkListenTime = performance.now();
+  } else {
+    setStatus('공이 날아갑니다!');
+  }
+
+  // Animation logic
+  const startT = performance.now();
+  const dur = reactionTime + 150; // visual travel takes slightly longer to feel impactful
+  
+  const dy = GOAL_Y - BALL_START_Y;
+  const dx = dy / Math.tan(angle);
+  const targetX = BALL_START_X + dx;
+
+  function anim() {
+    const t = performance.now() - startT;
+    const prog = Math.min(1, t / dur);
+    
+    animState.ballX = BALL_START_X + (targetX - BALL_START_X) * prog;
+    animState.ballY = BALL_START_Y + dy * prog;
+    
+    drawPitch();
+    
+    if(prog < 1) requestAnimationFrame(anim);
+  }
+  requestAnimationFrame(anim);
+}
+
+function playResultAnimation(result, ballTargetX, gkAngle) {
+  enableDrag('NONE');
+  
+  let msg = '';
+  if(result === 'GOAL') msg = '🔥 GOAL!!';
+  if(result === 'SAVE') msg = '🛡️ SAVE!!';
+  if(result === 'MISS') msg = '❌ OUT!!';
+  setStatus(msg, result === 'GOAL' ? 'status-danger' : 'status-highlight');
+
+  // Move GK visually
+  if(gkAngle !== null && gkAngle !== undefined) {
+    const startT = performance.now();
+    const gkTgtX = 200 + (-100) / Math.tan(gkAngle);
+    
+    function animGk() {
+      const t = performance.now() - startT;
+      const prog = Math.min(1, t / 150);
+      animState.gkX = 200 + (Math.max(GOAL_X1, Math.min(GOAL_X2, gkTgtX)) - 200) * prog;
+      
+      drawPitch();
+      // Draw result text overlay
+      ctx.fillStyle = result==='GOAL'?'#ef4444':'#10b981';
+      ctx.font = '900 48px Arial'; ctx.textAlign = 'center';
+      ctx.fillText(msg, 200, 250);
+      
+      if(prog < 1) requestAnimationFrame(animGk);
+    }
+    requestAnimationFrame(animGk);
+  } else {
+    drawPitch();
+    ctx.fillStyle = '#ef4444'; ctx.font = '900 48px Arial'; ctx.textAlign = 'center';
+    ctx.fillText(msg, 200, 250);
+  }
+}
+</script>
+</body>
+</html>

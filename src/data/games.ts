@@ -45,4 +45,13 @@ export const GAMES: Game[] = [
     gamePath: "/games/liar-game/index.html",
     category: "심리추리",
   },
+  {
+    id: "penalty-kick",
+    title: "승부차기 1vs1",
+    description: "드래그 속도로 파워를 조절해 골키퍼를 뚫어라! 피지컬과 심리전이 결합된 1vs1 멀티플레이 축구 대결",
+    thumbnail: "/thumbnails/penalty-kick.jpg", // 직접 넣으실 이미지 경로
+    gamePath: "/games/penalty-kick/index.html",
+    category: "반응속도",
+  },
+  
 ];
