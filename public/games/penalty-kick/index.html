@@ -37,7 +37,20 @@
     .dot { width: 12px; height: 12px; border-radius: 50%; background: #334155; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 900; }
     .dot.o { background: #10b981; color: #fff; } .dot.x { background: #ef4444; color: #fff; }
     
-    #gameCanvas { width: 100%; aspect-ratio: 4/5; background: var(--pitch-bg); border-radius: 12px; border: 2px solid var(--pitch-lines); box-shadow: inset 0 0 40px rgba(0,0,0,0.5); touch-action: none; cursor: crosshair; }
+    #gameCanvas { 
+        width: 100%; 
+        height: auto;
+        max-width: 400px; /* 원본 해상도 이상 늘어나지 않음 */
+        max-height: 55dvh; /* 모바일 세로 길이 한계 설정 */
+        aspect-ratio: 4/5; 
+        margin: 0 auto; /* 화면 중앙 정렬 */
+        background: var(--pitch-bg); 
+        border-radius: 12px; 
+        border: 2px solid var(--pitch-lines); 
+        box-shadow: inset 0 0 40px rgba(0,0,0,0.5); 
+        touch-action: none; 
+        cursor: crosshair; 
+    }
     
     .status-bar { width: 100%; text-align: center; padding: 12px; font-size: 15px; font-weight: 800; margin-top: 8px; border-radius: 8px; background: rgba(0,0,0,0.3); border: 1px solid var(--card-border); min-height: 46px; display: flex; align-items: center; justify-content: center; }
     .status-highlight { color: var(--accent); }
@@ -119,6 +132,12 @@ let isSinglePlayer = false;
 
 const cvs = document.getElementById('gameCanvas');
 const ctx = cvs.getContext('2d');
+
+// 기기 해상도(DPI)에 맞춰 캔버스 선명도 높이기
+const dpr = window.devicePixelRatio || 1;
+cvs.width = 400 * dpr;
+cvs.height = 500 * dpr;
+ctx.scale(dpr, dpr);
 
 const views = { menu: document.getElementById('viewMenu'), lobby: document.getElementById('viewLobby'), game: document.getElementById('viewGame'), result: document.getElementById('viewResult') };
 function showView(v) { Object.values(views).forEach(el => el.classList.remove('active')); views[v].classList.add('active'); }
@@ -502,8 +521,8 @@ function enableDrag(role) {
     if(!isDragging) return;
     isDragging = false;
     const rect = cvs.getBoundingClientRect();
-    const ex = (e.clientX - rect.left) * (cvs.width/rect.width);
-    const ey = (e.clientY - rect.top) * (cvs.height/rect.height);
+    const ex = (e.clientX - rect.left) * (400 / rect.width);
+    const ey = (e.clientY - rect.top) * (500 / rect.height);
     const dt = performance.now() - dragTime;
     
     // ----------------------------------------------------
