@@ -38,18 +38,17 @@
     .dot.o { background: #10b981; color: #fff; } .dot.x { background: #ef4444; color: #fff; }
     
     #gameCanvas { 
-        width: 100%; 
-        height: auto;
-        max-width: 400px; /* 원본 해상도 이상 늘어나지 않음 */
-        max-height: 55dvh; /* 모바일 세로 길이 한계 설정 */
-        aspect-ratio: 4/5; 
-        margin: 0 auto; /* 화면 중앙 정렬 */
-        background: var(--pitch-bg); 
-        border-radius: 12px; 
-        border: 2px solid var(--pitch-lines); 
-        box-shadow: inset 0 0 40px rgba(0,0,0,0.5); 
-        touch-action: none; 
-        cursor: crosshair; 
+      width: 100%; 
+      height: auto;
+      max-width: min(400px, 55dvh * 0.8);
+      aspect-ratio: 4/5;
+      margin: 0 auto;
+      background: var(--pitch-bg); 
+      border-radius: 12px; 
+      border: 2px solid var(--pitch-lines); 
+      box-shadow: inset 0 0 40px rgba(0,0,0,0.5); 
+      touch-action: none; 
+      cursor: crosshair; 
     }
     
     .status-bar { width: 100%; text-align: center; padding: 12px; font-size: 15px; font-weight: 800; margin-top: 8px; border-radius: 8px; background: rgba(0,0,0,0.3); border: 1px solid var(--card-border); min-height: 46px; display: flex; align-items: center; justify-content: center; }
@@ -109,7 +108,7 @@
         <div class="history-dots" id="sbHist2"></div>
       </div>
     </div>
-    <canvas id="gameCanvas" width="400" height="500"></canvas>
+    <canvas id="gameCanvas"></canvas>
     <div class="status-bar" id="gameStatus">상대방을 기다리는 중...</div>
   </div>
 
@@ -133,7 +132,7 @@ let isSinglePlayer = false;
 const cvs = document.getElementById('gameCanvas');
 const ctx = cvs.getContext('2d');
 
-// 기기 해상도(DPI)에 맞춰 캔버스 선명도 높이기
+// 모바일 기기 고해상도(DPI) 처리
 const dpr = window.devicePixelRatio || 1;
 cvs.width = 400 * dpr;
 cvs.height = 500 * dpr;
@@ -218,7 +217,7 @@ function handleHostData(data) {
   } else if (data.type === 'KICK_INPUT') {
     processKick(data.angle, data.speed);
   } else if (data.type === 'GK_INPUT') {
-    processGkInput(data.targetX);
+    processGkInput(data.targetX, data.timeTaken);
   }
 }
 
@@ -332,11 +331,10 @@ function processKick(angle, speed) {
       
       currentKickData.timeout = setTimeout(() => {
         let aiGkTargetX;
-        const isLeft = targetX < 158;
-        const isRight = targetX > 242;
         
-        if (Math.random() < 0.25) {
-           aiGkTargetX = targetX + (Math.random() * 30 - 15); // 공 위치 근처 방어
+        // AI 예측 방어 확률 40% 적용
+        if (Math.random() < 0.40) {
+           aiGkTargetX = targetX + (Math.random() * 30 - 15);
         } else {
            aiGkTargetX = GOAL_X1 + Math.random() * (GOAL_X2 - GOAL_X1);
         }
@@ -344,17 +342,16 @@ function processKick(angle, speed) {
       }, aiReactionTime);
     } else {
         currentKickData.timeout = setTimeout(() => {
-        // 아무 입력이 없으면 골키퍼의 기본 위치(정중앙 X좌표: 200)로 간주
+        // 무응답 시 정중앙 방어 판정
         const defaultGkX = 200;
-        const saveRange = 27; // 이전 단계에서 수정한 방어 반경을 똑같이 적용
+        const saveRange = 40; // 적정 밸런스 수치 40
         
-        // 공이 가만히 있는 골키퍼 품(가운데)으로 정확히 날아왔다면 방어 성공 처리
         if (Math.abs(currentKickData.targetX - defaultGkX) <= saveRange) {
           resolveTurn('SAVE', currentKickData.targetX, defaultGkX);
         } else {
           resolveTurn('GOAL', currentKickData.targetX, defaultGkX);
         }
-      }, reactionTime + 150);
+      }, reactionTime + 150); // 공 도착 시점 즉시 판정
     }
   }
 }
@@ -365,15 +362,15 @@ function processGkInput(gkTargetX, timeTaken) {
 
   let result = 'GOAL';
   
-  // 유예 시간과 방어 반경(75)은 이전 단계에서 조절하신 최적의 수치를 유지합니다.
+  // 유예 시간 부여
   if(timeTaken <= currentKickData.reactionTime + 150) {
-    const saveRange = 27; 
+    const saveRange = 40; // 적정 밸런스 수치 40
     if(Math.abs(currentKickData.targetX - gkTargetX) <= saveRange) {
       result = 'SAVE';
     }
   }
 
-  // [수정 1] 조작 즉시 골키퍼 다이빙 애니메이션만 단독으로 실행하여 조작감 유지
+  // 조작 즉시 골키퍼 애니메이션 단독 실행
   const startT = performance.now();
   const startGkX = animState.gkX;
   function animGk() {
@@ -385,11 +382,10 @@ function processGkInput(gkTargetX, timeTaken) {
   }
   requestAnimationFrame(animGk);
 
-  // [수정 2] 공이 날아가는 총 시간에서 지금까지 걸린 시간을 빼서 남은 대기 시간 계산
+  // 공이 도착하는 남은 시간 대기 후 알림 팝업 (동기화)
   const totalAnimTime = currentKickData.reactionTime + 150;
   const remainingTime = Math.max(0, totalAnimTime - timeTaken);
 
-  // 남은 시간만큼 정확히 기다린 후 텍스트 알림 및 점수 반영
   setTimeout(() => {
     resolveTurn(result, currentKickData.targetX, gkTargetX);
   }, remainingTime);
@@ -475,7 +471,8 @@ function resetCanvas() {
 }
 
 function drawPitch() {
-  ctx.clearRect(0,0,cvs.width,cvs.height);
+  // 스케일링된 캔버스 기준 논리 해상도(400x500)로 렌더링
+  ctx.clearRect(0, 0, 400, 500);
   // Goal Post
   ctx.strokeStyle = '#fff'; ctx.lineWidth = 6;
   ctx.beginPath(); ctx.moveTo(GOAL_X1, GOAL_Y); ctx.lineTo(GOAL_X1, 30); ctx.lineTo(GOAL_X2, 30); ctx.lineTo(GOAL_X2, GOAL_Y); ctx.stroke();
@@ -505,14 +502,15 @@ function drawPitch() {
 let dragStartX=0, dragStartY=0, dragTime=0, isDragging=false;
 let gkListenTime = 0;
 
-// 수정된 입력 처리 로직
 function enableDrag(role) {
   isDragging = false;
   cvs.onpointerdown = (e) => {
     if(role === 'NONE') return;
     const rect = cvs.getBoundingClientRect();
-    dragStartX = (e.clientX - rect.left) * (cvs.width/rect.width);
-    dragStartY = (e.clientY - rect.top) * (cvs.height/rect.height);
+    
+    // 모바일 해상도 대응: 가변 캔버스 크기를 400x500 논리 크기로 고정 매핑
+    dragStartX = (e.clientX - rect.left) * (400 / rect.width);
+    dragStartY = (e.clientY - rect.top) * (500 / rect.height);
     dragTime = performance.now();
     isDragging = true;
   };
@@ -521,34 +519,27 @@ function enableDrag(role) {
     if(!isDragging) return;
     isDragging = false;
     const rect = cvs.getBoundingClientRect();
+    
+    // 모바일 해상도 대응
     const ex = (e.clientX - rect.left) * (400 / rect.width);
     const ey = (e.clientY - rect.top) * (500 / rect.height);
     const dt = performance.now() - dragTime;
     
-    // ----------------------------------------------------
-    // [개선된 골키퍼 로직]
-    // 복잡한 각도 계산과 아래로 향하는 드래그 취소 조건을 없애고, 
-    // 터치/스와이프가 끝난 지점의 X 좌표로 직관적으로 다이빙합니다.
-    // ----------------------------------------------------
     if (role === 'GK') {
       enableDrag('NONE');
       const timeTaken = performance.now() - gkListenTime;
-      
-      // 화면 내 최종 X 좌표를 골대 범위(GOAL_X1 ~ GOAL_X2)에 맞춰 매핑
       const targetX = Math.max(GOAL_X1, Math.min(GOAL_X2, ex));
 
       if(isHost) processGkInput(targetX, timeTaken);
       else conn.send({type: 'GK_INPUT', targetX, timeTaken});
-      return; // 골키퍼 처리는 여기서 종료
+      return; 
     }
 
-    // ----------------------------------------------------
-    // [기존 키커 로직]
-    // ----------------------------------------------------
     const dist = Math.hypot(ex - dragStartX, ey - dragStartY);
-    if(dist < 20) return; // 너무 짧은 드래그 무시
+    if(dist < 20) return; 
 
-    if(ey > dragStartY + 10) return; // 아래로 드래그하면 취소
+    // 공격자는 슛을 날릴 때 아래로 드래그하면 취소
+    if(ey > dragStartY + 10) return; 
 
     const angle = Math.atan2(ey - dragStartY, ex - dragStartX);
     const speed = dist / dt;
@@ -606,7 +597,6 @@ function playResultAnimation(result, ballTargetX, gkTargetX) {
   if(result === 'MISS') msg = '❌ OUT!!';
   setStatus(msg, result === 'GOAL' ? 'status-danger' : 'status-highlight');
 
-  // Move GK visually to targetX
   if(gkTargetX !== null && gkTargetX !== undefined) {
     const startT = performance.now();
     const startGkX = animState.gkX;
