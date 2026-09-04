@@ -47,6 +47,7 @@
 <body>
 
 <div id="app">
+  <!-- 메뉴 -->
   <div id="viewMenu" class="view active">
     <div class="card">
       <h1>⚽ 승부차기 대결</h1>
@@ -63,6 +64,7 @@
     </div>
   </div>
 
+  <!-- 대기실 -->
   <div id="viewLobby" class="view">
     <div class="card">
       <h2 style="font-size: 18px; margin-bottom: 12px;">대기실</h2>
@@ -76,6 +78,7 @@
     </div>
   </div>
 
+  <!-- 인게임 -->
   <div id="viewGame" class="view">
     <div class="scoreboard">
       <div class="score-block">
@@ -97,6 +100,7 @@
     <div class="status-bar" id="gameStatus">상대방을 기다리는 중...</div>
   </div>
 
+  <!-- 결과 -->
   <div id="viewResult" class="view">
     <div class="card">
       <h1 id="resTitle" style="font-size: 32px; margin-bottom: 8px;">승리!</h1>
@@ -107,15 +111,18 @@
 </div>
 
 <script>
+// P2P Setup
 let peer = null, conn = null;
 let isHost = false, roomCode = '';
 let myId = '', myNick = '', oppNick = '';
 let gameState = null; 
 let isSinglePlayer = false;
 
+// Canvas Context
 const cvs = document.getElementById('gameCanvas');
 const ctx = cvs.getContext('2d');
 
+// UI Elements
 const views = { menu: document.getElementById('viewMenu'), lobby: document.getElementById('viewLobby'), game: document.getElementById('viewGame'), result: document.getElementById('viewResult') };
 function showView(v) { Object.values(views).forEach(el => el.classList.remove('active')); views[v].classList.add('active'); }
 
@@ -126,22 +133,26 @@ function exitGame() {
   showView('menu');
 }
 
+// 혼자하기 모드 시작
 document.getElementById('btnSolo').onclick = () => {
   myNick = document.getElementById('nickInput').value.trim() || 'Player';
-  oppNick = 'COM'; isSinglePlayer = true; isHost = true; roomCode = 'SOLO';
+  oppNick = 'COM';
+  isSinglePlayer = true;
+  isHost = true; 
+  roomCode = 'SOLO';
   setupLobby();
 };
 
 document.getElementById('btnCreate').onclick = () => {
   myNick = document.getElementById('nickInput').value.trim() || 'Player1';
-  isSinglePlayer = false; isHost = true; roomCode = Math.random().toString(36).substring(2,6).toUpperCase();
+  isSinglePlayer = false; isHost = true; 
+  roomCode = Math.random().toString(36).substring(2,6).toUpperCase();
   peer = new Peer(`meong-pk-${roomCode}`);
   peer.on('open', id => { myId = id; setupLobby(); });
   peer.on('connection', c => {
     if(conn) { c.send({type: 'REJECT', msg: '방이 꽉 찼습니다.'}); setTimeout(()=>c.close(), 500); return; }
     conn = c;
     conn.on('data', data => handleHostData(data));
-    // 호스트 환경: 게스트가 나갔을 때 방 폭파
     conn.on('close', () => { 
       conn = null; 
       alert('상대방이 방을 나갔습니다. 대결이 종료됩니다.'); 
@@ -158,7 +169,6 @@ document.getElementById('btnJoin').onclick = () => {
     myId = id; conn = peer.connect(`meong-pk-${roomCode}`, { reliable: true });
     conn.on('open', () => { conn.send({type: 'JOIN', nick: myNick}); });
     conn.on('data', data => handleGuestData(data));
-    // 게스트 환경: 호스트가 나갔을 때 방 폭파
     conn.on('close', () => { 
       alert('상대방(방장)과 연결이 끊겼습니다. 대결이 종료됩니다.'); 
       exitGame(); 
@@ -182,16 +192,25 @@ function setupLobby() {
   }
 }
 
+// Game Logic Data
 const MAX_ROUNDS = 5;
 const GOAL_X1 = 75, GOAL_X2 = 325, GOAL_Y = 80;
 const BALL_START_X = 200, BALL_START_Y = 420;
 
+// Host Flow
 function handleHostData(data) {
-  if(data.type === 'JOIN') { oppNick = data.nick; conn.send({type: 'JOIN_ACK', hostNick: myNick}); setupLobby(); } 
-  else if (data.type === 'KICK_INPUT') { processKick(data.angle, data.speed); } 
-  else if (data.type === 'GK_INPUT') { processGkInput(data.angle, data.timeTaken); }
+  if(data.type === 'JOIN') {
+    oppNick = data.nick;
+    conn.send({type: 'JOIN_ACK', hostNick: myNick});
+    setupLobby();
+  } else if (data.type === 'KICK_INPUT') {
+    processKick(data.angle, data.speed);
+  } else if (data.type === 'GK_INPUT') {
+    processGkInput(data.angle, data.timeTaken);
+  }
 }
 
+// Guest Flow
 function handleGuestData(data) {
   if(data.type === 'JOIN_ACK') { oppNick = data.hostNick; setupLobby(); document.getElementById('lobbyP2').textContent = myNick; document.getElementById('lobbyP1').textContent = oppNick; }
   else if(data.type === 'STATE_UPDATE') { syncState(data.state); }
@@ -201,28 +220,40 @@ function handleGuestData(data) {
 
 document.getElementById('btnStart').onclick = () => {
   if(!isSinglePlayer && (!isHost || !conn)) return;
-  gameState = { round: 1, currentTurn: 1, p1: { nick: myNick, score: 0, hist: [] }, p2: { nick: oppNick, score: 0, hist: [] }, phase: 'KICKER_INPUT' };
+  gameState = {
+    round: 1, currentTurn: 1, 
+    p1: { nick: myNick, score: 0, hist: [] },
+    p2: { nick: oppNick, score: 0, hist: [] },
+    phase: 'KICKER_INPUT' 
+  };
   broadcastState();
 };
 
 function broadcastState() {
   syncState(gameState);
-  if (!isSinglePlayer && conn) { conn.send({type: 'STATE_UPDATE', state: gameState}); }
+  if (!isSinglePlayer && conn) {
+    conn.send({type: 'STATE_UPDATE', state: gameState});
+  }
 }
 
 function syncState(state) {
-  gameState = state; showView('game');
-  document.getElementById('sbName1').textContent = state.p1.nick; document.getElementById('sbScore1').textContent = state.p1.score;
-  document.getElementById('sbName2').textContent = state.p2.nick; document.getElementById('sbScore2').textContent = state.p2.score;
+  gameState = state;
+  showView('game');
+  document.getElementById('sbName1').textContent = state.p1.nick;
+  document.getElementById('sbScore1').textContent = state.p1.score;
+  document.getElementById('sbName2').textContent = state.p2.nick;
+  document.getElementById('sbScore2').textContent = state.p2.score;
   document.getElementById('sbRound').textContent = state.round > 5 ? `서든데스 (${state.round})` : `ROUND ${state.round}`;
   
   const isHostKicker = state.currentTurn === 1;
   const kickerNick = isHostKicker ? state.p1.nick : state.p2.nick;
   document.getElementById('sbTurnInfo').textContent = `키커: ${kickerNick}`;
 
-  renderHistory('sbHist1', state.p1.hist); renderHistory('sbHist2', state.p2.hist);
+  renderHistory('sbHist1', state.p1.hist);
+  renderHistory('sbHist2', state.p2.hist);
 
   amIKicker = (isHost && isHostKicker) || (!isHost && !isHostKicker);
+  
   resetCanvas();
   
   if(state.phase === 'KICKER_INPUT') {
@@ -232,11 +263,15 @@ function syncState(state) {
     } else {
       setStatus('상대방이 킥을 준비 중입니다...');
       enableDrag('NONE');
-      if (isSinglePlayer && state.currentTurn === 2) { setTimeout(executeAiKick, 1200 + Math.random() * 800); }
+      
+      if (isSinglePlayer && state.currentTurn === 2) {
+        setTimeout(executeAiKick, 1200 + Math.random() * 800);
+      }
     }
   }
 }
 
+// AI 키커 로직 (혼자하기)
 function executeAiKick() {
   if (gameState.phase !== 'KICKER_INPUT' || gameState.currentTurn !== 2) return;
   const sectors = [-1.85, -1.57, -1.29];
@@ -247,13 +282,17 @@ function executeAiKick() {
 
 function renderHistory(id, hist) {
   const el = document.getElementById(id); el.innerHTML = '';
-  hist.forEach(res => { const dot = document.createElement('div'); dot.className = `dot ${res==='O'?'o':'x'}`; dot.textContent = res; el.appendChild(dot); });
+  hist.forEach(res => {
+    const dot = document.createElement('div'); dot.className = `dot ${res==='O'?'o':'x'}`; dot.textContent = res; el.appendChild(dot);
+  });
 }
 
 function setStatus(msg, className='') {
-  const el = document.getElementById('gameStatus'); el.textContent = msg; el.className = `status-bar ${className}`;
+  const el = document.getElementById('gameStatus');
+  el.textContent = msg; el.className = `status-bar ${className}`;
 }
 
+// Host Physics Processing
 let currentKickData = null;
 
 function processKick(angle, speed) {
@@ -261,13 +300,15 @@ function processKick(angle, speed) {
   let reactionTime = 400 - ((speed - 0.5) / 3.5) * 250;
   reactionTime = Math.max(150, Math.min(400, Math.floor(reactionTime)));
 
-  const dy = GOAL_Y - BALL_START_Y; 
+  const dy = GOAL_Y - BALL_START_Y;
   const dx = dy / Math.tan(angle);
   const targetX = BALL_START_X + dx;
+
   const isOut = targetX < GOAL_X1 || targetX > GOAL_X2 || angle > 0;
   
   currentKickData = { angle, targetX, reactionTime, isOut };
-  gameState.phase = 'WAITING_GK'; broadcastState();
+  gameState.phase = 'WAITING_GK';
+  broadcastState();
 
   const packet = { type: 'BALL_FIRED', angle, reactionTime, isOut };
   if (!isSinglePlayer && conn) conn.send(packet);
@@ -279,17 +320,26 @@ function processKick(angle, speed) {
   } else {
     if (isSinglePlayer && gameState.currentTurn === 1) {
       const aiReactionTime = 200 + Math.random() * 200; 
+      
       currentKickData.timeout = setTimeout(() => {
-        let gkAngle; const isLeft = targetX < 158; const isRight = targetX > 242;
+        let gkAngle;
+        const isLeft = targetX < 158;
+        const isRight = targetX > 242;
+        
         if (Math.random() < 0.65) {
-           if (isLeft) gkAngle = -2.35; else if (isRight) gkAngle = -0.78; else gkAngle = -1.57; 
+           if (isLeft) gkAngle = -2.35; 
+           else if (isRight) gkAngle = -0.78; 
+           else gkAngle = -1.57; 
         } else {
-           const options = [-2.35, -1.57, -0.78]; gkAngle = options[Math.floor(Math.random() * options.length)];
+           const options = [-2.35, -1.57, -0.78];
+           gkAngle = options[Math.floor(Math.random() * options.length)];
         }
         processGkInput(gkAngle, aiReactionTime);
       }, aiReactionTime);
     } else {
-      currentKickData.timeout = setTimeout(() => { resolveTurn('GOAL', targetX, null); }, reactionTime + 1000);
+      currentKickData.timeout = setTimeout(() => {
+        resolveTurn('GOAL', targetX, null);
+      }, reactionTime + 1000);
     }
   }
 }
@@ -297,12 +347,23 @@ function processKick(angle, speed) {
 function processGkInput(gkAngle, timeTaken) {
   if(!currentKickData || currentKickData.isOut) return;
   clearTimeout(currentKickData.timeout);
+
   let result = 'GOAL';
+  
   if(timeTaken <= currentKickData.reactionTime) {
     const gkTargetX = 200 + (-100) / Math.tan(gkAngle);
-    const getSector = (tx) => { if(tx < 158) return 'L'; if(tx > 242) return 'R'; return 'C'; };
-    if(getSector(currentKickData.targetX) === getSector(gkTargetX)) { result = 'SAVE'; }
+    
+    // ✅ 수정된 수비 범위 판정 로직:
+    // 골키퍼가 다이빙한 최종 지점(gkTargetX)과 공의 도착 지점(targetX) 간의 거리를 검사.
+    // 기존의 좌/중/우 3등분 비교를 없애고, 반경 80px 내에 들어오면 무조건 막아내도록 변경.
+    // (골대 전체 너비가 250px이므로 좌우 합쳐 160px 커버 -> 매우 넉넉함)
+    const saveRange = 80;
+    
+    if(Math.abs(currentKickData.targetX - gkTargetX) <= saveRange) {
+      result = 'SAVE';
+    }
   }
+
   resolveTurn(result, currentKickData.targetX, gkAngle);
 }
 
@@ -310,7 +371,12 @@ function resolveTurn(resultText, ballTargetX, gkAngle) {
   const isGoal = resultText === 'GOAL';
   const pData = gameState.currentTurn === 1 ? gameState.p1 : gameState.p2;
   
-  if(isGoal) { pData.score++; pData.hist.push('O'); } else { pData.hist.push('X'); }
+  if(isGoal) {
+    pData.score++;
+    pData.hist.push('O');
+  } else {
+    pData.hist.push('X');
+  }
 
   const animPacket = { type: 'RESULT_ANIM', result: resultText, ballTargetX, gkAngle };
   if(isHost) playResultAnimation(resultText, ballTargetX, gkAngle);
@@ -318,12 +384,30 @@ function resolveTurn(resultText, ballTargetX, gkAngle) {
 
   setTimeout(() => {
     if(gameState.currentTurn === 1) {
-      gameState.currentTurn = 2; gameState.phase = 'KICKER_INPUT'; broadcastState();
+      gameState.currentTurn = 2;
+      gameState.phase = 'KICKER_INPUT';
+      broadcastState();
     } else {
-      const r = gameState.round; const diff = gameState.p1.score - gameState.p2.score; const remKicks = MAX_ROUNDS - r;
+      const r = gameState.round;
+      const diff = gameState.p1.score - gameState.p2.score;
+      const remKicks = MAX_ROUNDS - r;
+
       let gameOver = false;
-      if(r < MAX_ROUNDS) { if (Math.abs(diff) > remKicks) gameOver = true; } else { if (diff !== 0) gameOver = true; }
-      if(gameOver) { endGame(); } else { gameState.round++; gameState.currentTurn = 1; gameState.phase = 'KICKER_INPUT'; broadcastState(); }
+      
+      if(r < MAX_ROUNDS) {
+        if (Math.abs(diff) > remKicks) gameOver = true;
+      } else {
+        if (diff !== 0) gameOver = true;
+      }
+
+      if(gameOver) {
+        endGame();
+      } else {
+        gameState.round++;
+        gameState.currentTurn = 1;
+        gameState.phase = 'KICKER_INPUT';
+        broadcastState();
+      }
     }
   }, 2500);
 }
@@ -331,88 +415,177 @@ function resolveTurn(resultText, ballTargetX, gkAngle) {
 function endGame() {
   let wName = gameState.p1.score > gameState.p2.score ? gameState.p1.nick : gameState.p2.nick;
   if(gameState.p1.score === gameState.p2.score) wName = '무승부 (에러)';
+  
   showView('result');
-  document.getElementById('resTitle').textContent = gameState.p1.score > gameState.p2.score ? '🎉 승리!' : '💀 패배...';
+  document.getElementById('resTitle').textContent = gameState.p1.score > gameState.p2.score && isHost || gameState.p2.score > gameState.p1.score && !isHost ? '🎉 승리!' : '💀 패배...';
   document.getElementById('resDesc').textContent = `최종 스코어 ${gameState.p1.score} : ${gameState.p2.score}`;
 }
 
-document.getElementById('btnLobby').onclick = () => { exitGame(); };
+document.getElementById('btnLobby').onclick = () => { 
+  if (isSinglePlayer) {
+    showView('menu'); 
+  } else {
+    setupLobby();
+  }
+};
 
+// ==========================================
+// Canvas & Input Rendering
+// ==========================================
 let amIKicker = false;
-let animState = { ballX: BALL_START_X, ballY: BALL_START_Y, gkX: 200, gkY: 80, moving: false };
+let animState = {
+  ballX: BALL_START_X, ballY: BALL_START_Y,
+  gkX: 200, gkY: 80,
+  moving: false
+};
 
 function resetCanvas() {
-  animState.ballX = BALL_START_X; animState.ballY = BALL_START_Y; animState.gkX = 200; animState.gkY = 80; animState.moving = false; drawPitch();
+  animState.ballX = BALL_START_X; animState.ballY = BALL_START_Y;
+  animState.gkX = 200; animState.gkY = 80;
+  animState.moving = false;
+  drawPitch();
 }
 
 function drawPitch() {
   ctx.clearRect(0,0,cvs.width,cvs.height);
-  ctx.strokeStyle = '#fff'; ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(GOAL_X1, GOAL_Y); ctx.lineTo(GOAL_X1, 30); ctx.lineTo(GOAL_X2, 30); ctx.lineTo(GOAL_X2, GOAL_Y); ctx.stroke();
+  // Goal Post
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 6;
+  ctx.beginPath(); ctx.moveTo(GOAL_X1, GOAL_Y); ctx.lineTo(GOAL_X1, 30); ctx.lineTo(GOAL_X2, 30); ctx.lineTo(GOAL_X2, GOAL_Y); ctx.stroke();
+  // Netting pattern
   ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(255,255,255,0.2)';
   for(let i=GOAL_X1; i<=GOAL_X2; i+=15) { ctx.beginPath(); ctx.moveTo(i, 30); ctx.lineTo(i, GOAL_Y); ctx.stroke(); }
   for(let i=30; i<=GOAL_Y; i+=10) { ctx.beginPath(); ctx.moveTo(GOAL_X1, i); ctx.lineTo(GOAL_X2, i); ctx.stroke(); }
-  ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.lineWidth = 3; ctx.strokeRect(30, GOAL_Y, 340, 120); ctx.beginPath(); ctx.arc(200, 200, 40, 0, Math.PI); ctx.stroke(); 
+  
+  // Penalty box lines
+  ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.lineWidth = 3;
+  ctx.strokeRect(30, GOAL_Y, 340, 120); // Penalty area
+  ctx.beginPath(); ctx.arc(200, 200, 40, 0, Math.PI); ctx.stroke(); // D-curve
+  
+  // Ball mark
   ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(BALL_START_X, BALL_START_Y, 4, 0, Math.PI*2); ctx.fill();
-  ctx.font = '40px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('🧤', animState.gkX, animState.gkY);
-  ctx.font = '24px Arial'; ctx.fillText('⚽', animState.ballX, animState.ballY);
+
+  // Draw GK
+  ctx.font = '40px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('🧤', animState.gkX, animState.gkY);
+
+  // Draw Ball
+  ctx.font = '24px Arial';
+  ctx.fillText('⚽', animState.ballX, animState.ballY);
 }
 
-let dragStartX=0, dragStartY=0, dragTime=0, isDragging=false; let gkListenTime = 0;
+// Input Handling
+let dragStartX=0, dragStartY=0, dragTime=0, isDragging=false;
+let gkListenTime = 0, gkMaxTime = 0;
 
 function enableDrag(role) {
   isDragging = false;
   cvs.onpointerdown = (e) => {
     if(role === 'NONE') return;
     const rect = cvs.getBoundingClientRect();
-    dragStartX = (e.clientX - rect.left) * (cvs.width/rect.width); dragStartY = (e.clientY - rect.top) * (cvs.height/rect.height);
-    dragTime = performance.now(); isDragging = true;
+    dragStartX = (e.clientX - rect.left) * (cvs.width/rect.width);
+    dragStartY = (e.clientY - rect.top) * (cvs.height/rect.height);
+    dragTime = performance.now();
+    isDragging = true;
   };
+
   cvs.onpointerup = (e) => {
-    if(!isDragging) return; isDragging = false;
+    if(!isDragging) return;
+    isDragging = false;
     const rect = cvs.getBoundingClientRect();
-    const ex = (e.clientX - rect.left) * (cvs.width/rect.width); const ey = (e.clientY - rect.top) * (cvs.height/rect.height);
+    const ex = (e.clientX - rect.left) * (cvs.width/rect.width);
+    const ey = (e.clientY - rect.top) * (cvs.height/rect.height);
     const dt = performance.now() - dragTime;
-    const dist = Math.hypot(ex - dragStartX, ey - dragStartY); if(dist < 30) return;
+    
+    const dist = Math.hypot(ex - dragStartX, ey - dragStartY);
+    if(dist < 30) return; // Ignore taps
+
+    // Must swipe UP (dy < 0)
     if(ey > dragStartY + 20) return;
-    const angle = Math.atan2(ey - dragStartY, ex - dragStartX); const speed = dist / dt;
-    if(role === 'KICK') { enableDrag('NONE'); if(isHost) processKick(angle, speed); else conn.send({type: 'KICK_INPUT', angle, speed}); } 
-    else if (role === 'GK') { enableDrag('NONE'); const timeTaken = performance.now() - gkListenTime; if(isHost) processGkInput(angle, timeTaken); else conn.send({type: 'GK_INPUT', angle, timeTaken}); }
+
+    const angle = Math.atan2(ey - dragStartY, ex - dragStartX);
+    const speed = dist / dt;
+
+    if(role === 'KICK') {
+      enableDrag('NONE');
+      if(isHost) processKick(angle, speed);
+      else conn.send({type: 'KICK_INPUT', angle, speed});
+    } 
+    else if (role === 'GK') {
+      enableDrag('NONE');
+      const timeTaken = performance.now() - gkListenTime;
+      if(isHost) processGkInput(angle, timeTaken);
+      else conn.send({type: 'GK_INPUT', angle, timeTaken});
+    }
   };
 }
 
 function playBallAnimation(angle, reactionTime, isOut) {
-  enableDrag('NONE'); animState.moving = true;
+  enableDrag('NONE');
+  animState.moving = true;
+  
   if(!amIKicker && !isOut) {
     setStatus(`방어하세요! 남은 시간: ${reactionTime}ms`, 'status-danger');
-    if (!isSinglePlayer || gameState.currentTurn === 2) { enableDrag('GK'); } gkListenTime = performance.now();
-  } else { setStatus('공이 날아갑니다!'); }
+    
+    if (!isSinglePlayer || gameState.currentTurn === 2) {
+      enableDrag('GK');
+    }
+    gkListenTime = performance.now();
+  } else {
+    setStatus('공이 날아갑니다!');
+  }
 
-  const startT = performance.now(); const dur = reactionTime + 150; 
-  const dy = GOAL_Y - BALL_START_Y; const dx = dy / Math.tan(angle); const targetX = BALL_START_X + dx;
+  const startT = performance.now();
+  const dur = reactionTime + 150;
+  
+  const dy = GOAL_Y - BALL_START_Y;
+  const dx = dy / Math.tan(angle);
+  const targetX = BALL_START_X + dx;
 
   function anim() {
-    const t = performance.now() - startT; const prog = Math.min(1, t / dur);
-    animState.ballX = BALL_START_X + (targetX - BALL_START_X) * prog; animState.ballY = BALL_START_Y + dy * prog;
+    const t = performance.now() - startT;
+    const prog = Math.min(1, t / dur);
+    
+    animState.ballX = BALL_START_X + (targetX - BALL_START_X) * prog;
+    animState.ballY = BALL_START_Y + dy * prog;
+    
     drawPitch();
+    
     if(prog < 1) requestAnimationFrame(anim);
-  } requestAnimationFrame(anim);
+  }
+  requestAnimationFrame(anim);
 }
 
 function playResultAnimation(result, ballTargetX, gkAngle) {
   enableDrag('NONE');
-  let msg = ''; if(result === 'GOAL') msg = '🔥 GOAL!!'; if(result === 'SAVE') msg = '🛡️ SAVE!!'; if(result === 'MISS') msg = '❌ OUT!!';
+  
+  let msg = '';
+  if(result === 'GOAL') msg = '🔥 GOAL!!';
+  if(result === 'SAVE') msg = '🛡️ SAVE!!';
+  if(result === 'MISS') msg = '❌ OUT!!';
   setStatus(msg, result === 'GOAL' ? 'status-danger' : 'status-highlight');
 
+  // Move GK visually
   if(gkAngle !== null && gkAngle !== undefined) {
-    const startT = performance.now(); const gkTgtX = 200 + (-100) / Math.tan(gkAngle);
+    const startT = performance.now();
+    const gkTgtX = 200 + (-100) / Math.tan(gkAngle);
+    
     function animGk() {
-      const t = performance.now() - startT; const prog = Math.min(1, t / 150);
-      animState.gkX = 200 + (Math.max(GOAL_X1, Math.min(GOAL_X2, gkTgtX)) - 200) * prog; drawPitch();
-      ctx.fillStyle = result==='GOAL'?'#ef4444':'#10b981'; ctx.font = '900 48px Arial'; ctx.textAlign = 'center'; ctx.fillText(msg, 200, 250);
+      const t = performance.now() - startT;
+      const prog = Math.min(1, t / 150);
+      animState.gkX = 200 + (Math.max(GOAL_X1, Math.min(GOAL_X2, gkTgtX)) - 200) * prog;
+      
+      drawPitch();
+      ctx.fillStyle = result==='GOAL'?'#ef4444':'#10b981';
+      ctx.font = '900 48px Arial'; ctx.textAlign = 'center';
+      ctx.fillText(msg, 200, 250);
+      
       if(prog < 1) requestAnimationFrame(animGk);
-    } requestAnimationFrame(animGk);
+    }
+    requestAnimationFrame(animGk);
   } else {
-    drawPitch(); ctx.fillStyle = '#ef4444'; ctx.font = '900 48px Arial'; ctx.textAlign = 'center'; ctx.fillText(msg, 200, 250);
+    drawPitch();
+    ctx.fillStyle = '#ef4444'; ctx.font = '900 48px Arial'; ctx.textAlign = 'center';
+    ctx.fillText(msg, 200, 250);
   }
 }
 </script>
