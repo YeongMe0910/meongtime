@@ -42,28 +42,33 @@
       --citizen-glow: rgba(220, 38, 38, 0.4);
     }
 
+    /* 💡 잘림 방지: overflow-y를 auto로 변경하고 최상단부터 정렬 */
     body, html {
       width: 100%; height: 100%;
       background: var(--bg-color); color: var(--text-main);
       font-family: -apple-system, BlinkMacSystemFont, "Pretendard", sans-serif;
-      display: flex; justify-content: center; align-items: center;
-      overflow: hidden; transition: background-color 0.2s, color 0.2s;
+      display: flex; justify-content: center; align-items: flex-start;
+      overflow-x: hidden; overflow-y: auto; transition: background-color 0.2s, color 0.2s;
     }
 
+    /* 💡 잘림 방지: 강제 height 대신 min-height 적용 및 여백 부여 */
     #app {
-    width: 100%;
-    max-width: 680px;
-    height: 100%;
-    min-height: 560px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 10px;
-    position: relative;
-    overflow-y: auto;
-  }
-    .view { display: none; width: 100%; height: 100%; flex-direction: column; justify-content: center; }
+      width: 100%;
+      max-width: 680px;
+      min-height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 24px 10px;
+      position: relative;
+    }
+
+    /* 💡 여유 공간이 있을 때만 수직 중앙 정렬되도록 margin 자동 할당 */
+    .view { 
+      display: none; width: 100%; margin: auto 0; 
+      flex-direction: column; justify-content: center; 
+    }
     .view.active { display: flex; }
 
     .card {
@@ -137,9 +142,13 @@
       padding: 8px 12px; display: flex; justify-content: space-between; align-items: center;
     }
 
-    /* 인게임 레이아웃 */
+    /* 💡 잘림 방지: 내부 공간이 부족해도 아이템을 위아래로 밀어내지 않고 자연스럽게 쌓이게 배치 */
+    #viewGame {
+      display: flex; flex-direction: column; justify-content: flex-start; gap: 12px;
+    }
+
     .game-header {
-      width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;
+      width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;
     }
     .theme-badge {
       background: var(--accent); color: var(--accent-text); padding: 6px 14px;
@@ -151,7 +160,7 @@
     /* 4x4 단어 격자판 */
     .word-grid {
       display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(4, 1fr);
-      gap: 6px; width: 100%; max-width: 520px; aspect-ratio: 1 / 0.85; margin: 0 auto 8px auto;
+      gap: 6px; width: 100%; max-width: 520px; height: 240px; margin: 0 auto;
     }
     .word-tile {
       background: var(--tile-bg); border: 1.5px solid var(--tile-border);
@@ -161,58 +170,45 @@
       transition: transform 0.1s, border-color 0.2s, background 0.2s;
     }
 
-    /* 시민에게 정답 단어 선명한 빨간색 강조 */
     .word-tile.target-citizen {
-      background: #ef4444 !important;
-      border: 2px solid #ffffff !important;
-      color: #ffffff !important;
-      box-shadow: 0 0 16px var(--citizen-glow) !important;
-      transform: scale(1.03);
-      z-index: 2;
+      background: #ef4444 !important; border: 2px solid #ffffff !important;
+      color: #ffffff !important; box-shadow: 0 0 16px var(--citizen-glow) !important;
+      transform: scale(1.03); z-index: 2;
     }
 
     .word-tile.guessable { cursor: pointer; }
     .word-tile.guessable:hover { border-color: var(--accent); background: rgba(250, 204, 21, 0.2); }
 
-    /* 발언 차례 & 순서 진행 트래커 */
     .turn-status-card {
       width: 100%; max-width: 520px; background: var(--input-bg);
       border: 1px solid var(--card-border); border-radius: 12px; padding: 8px 12px;
-      margin-bottom: 6px; display: flex; flex-direction: column; gap: 4px;
+      margin: 0 auto; display: flex; flex-direction: column; gap: 4px;
     }
-    .turn-order-chips {
-      display: flex; gap: 4px; overflow-x: auto; padding-bottom: 2px;
-    }
+    .turn-order-chips { display: flex; gap: 4px; overflow-x: auto; padding-bottom: 2px; }
     .turn-chip {
       font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 6px;
-      background: var(--tile-bg); color: var(--text-sub); border: 1px solid var(--card-border);
-      white-space: nowrap;
+      background: var(--tile-bg); color: var(--text-sub); border: 1px solid var(--card-border); white-space: nowrap;
     }
-    .turn-chip.active {
-      background: var(--accent); color: var(--accent-text); border-color: var(--accent);
-    }
-    .turn-chip.done {
-      opacity: 0.5; text-decoration: line-through;
-    }
+    .turn-chip.active { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+    .turn-chip.done { opacity: 0.5; text-decoration: line-through; }
 
+    /* 💡 잘림 방지: 가변 flex 대신 고정 높이를 주어 안정적인 레이아웃 보장 */
     .clue-log {
-      width: 100%; max-width: 520px; height: 85px; background: var(--input-bg);
+      width: 100%; max-width: 520px; height: 110px; background: var(--input-bg);
       border: 1px solid var(--card-border); border-radius: 12px; padding: 8px 12px;
-      overflow-y: auto; display: flex; flex-direction: column; gap: 4px; font-size: 12px;
+      overflow-y: auto; display: flex; flex-direction: column; gap: 4px; font-size: 12px; margin: 0 auto;
     }
     .clue-msg { display: flex; gap: 6px; }
     .clue-speaker { font-weight: 800; color: var(--accent); shrink: 0; }
     .clue-text { color: var(--text-main); word-break: break-all; }
 
-    .clue-input-bar {
-      width: 100%; max-width: 520px; display: flex; gap: 6px; margin-top: 6px;
-    }
+    .clue-input-bar { width: 100%; max-width: 520px; display: flex; gap: 6px; margin: 0 auto; }
     .clue-input-bar input { flex: 1; padding: 8px 12px; font-size: 13px; }
     .clue-input-bar button { padding: 8px 14px; font-size: 13px; }
 
     .vote-grid {
       display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-      gap: 6px; width: 100%; max-width: 520px; max-height: 140px; overflow-y: auto; margin-top: 8px;
+      gap: 6px; width: 100%; max-width: 520px; max-height: 130px; overflow-y: auto; margin: 4px auto 0 auto;
     }
     .vote-btn {
       background: var(--input-bg); border: 1px solid var(--card-border);
@@ -227,6 +223,36 @@
       padding: 8px; text-align: center; border-bottom: 1px solid var(--card-border); font-size: 13px;
     }
     .rank-1 { color: var(--accent); font-weight: 900; }
+
+    /* =======================================================
+       📱 모바일 환경 최적화 (가로 480px 이하)
+       ======================================================= */
+    @media (max-width: 480px) {
+      #app { padding: 12px 6px; }
+      .card { padding: 16px; border-radius: 16px; }
+      h1 { font-size: 22px; }
+      .subtitle { font-size: 11px; }
+      .input-group input, .input-group select, .input-group button { padding: 10px; font-size: 13px; }
+      .room-code-badge { font-size: 20px; padding: 10px; }
+      
+      #viewGame { gap: 8px; }
+      .game-header { margin-bottom: 2px; }
+      .theme-badge { font-size: 12px; padding: 4px 10px; }
+      .game-timer { font-size: 16px; }
+      
+      .word-grid { height: auto; aspect-ratio: 1/1; gap: 4px; }
+      .word-tile { font-size: clamp(10px, 3.5vw, 13px); border-radius: 6px; padding: 2px; }
+      
+      .turn-status-card { padding: 6px 10px; margin-bottom: 2px; }
+      .turn-chip { font-size: 10px; padding: 2px 6px; }
+      
+      .clue-log { height: 90px; font-size: 11px; padding: 6px 10px; }
+      .clue-input-bar input { padding: 8px 10px; font-size: 12px; }
+      .clue-input-bar button { padding: 8px 12px; font-size: 12px; }
+      
+      .vote-grid { grid-template-columns: repeat(2, 1fr); max-height: 120px; margin-top: 4px; }
+      .vote-btn { padding: 6px 8px; font-size: 11px; }
+    }
   </style>
 </head>
 <body>
@@ -390,7 +416,7 @@
     <!-- 힌트 로그 -->
     <div class="clue-log" id="clueLog"></div>
 
-    <!-- 발언 입력 -->
+    <!-- 발언 입력창 -->
     <div class="clue-input-bar" id="clueInputContainer">
       <input type="text" id="clueInput" placeholder="단어에 대한 힌트 한마디를 입력하세요..." maxlength="40" disabled />
       <button id="btnSendClue" disabled>말하기</button>
@@ -500,7 +526,6 @@ const WORD_DATABASE = [
   }
 ];
 
-/* 피셔-예이츠 무작위 셔플 함수 */
 function shuffleArray(arr) {
   const result = [...arr];
   for (let i = result.length - 1; i > 0; i--) {
@@ -632,7 +657,6 @@ window.addEventListener('message', (event) => {
   }
 });
 
-/* MQTT 탐색 */
 function initMqtt() {
   try {
     mqttClient = mqtt.connect(MQTT_BROKER);
@@ -729,7 +753,6 @@ window.joinRoomDirect = (code) => {
   connectToRoom(code, document.getElementById('nicknameInput').value.trim());
 };
 
-/* 방 설정 모달 & 방 생성 */
 const modalEl = document.getElementById('createRoomModal');
 document.getElementById('btnOpenCreateModal').addEventListener('click', () => modalEl.classList.add('active'));
 document.getElementById('btnCancelModal').addEventListener('click', () => modalEl.classList.remove('active'));
@@ -912,15 +935,11 @@ function kickUser(userId) {
   syncLeaderboardToParent();
 }
 
-/* ==========================================================
-   호스트 & 게스트 패킷 통신
-   ========================================================== */
 function handleHostReceiveData(conn, data) {
   if (data.type === 'JOIN') {
     const joiningUid = data.userId;
     let nick = (data.nickname || '').trim();
 
-    // 1. 기존 유저 재접속 처리
     if (players[joiningUid]) {
       const existingUser = players[joiningUid];
       existingUser.peerId = conn.peer;
@@ -1041,9 +1060,6 @@ function broadcast(data) {
   connections.forEach(c => c.send(data));
 }
 
-/* ==========================================================
-   게임 진행 로직 (라운드 시작 -> 발언 -> 투표 -> 결과)
-   ========================================================== */
 document.getElementById('btnStartGame').addEventListener('click', () => {
   const activeCount = Object.values(players).filter(p => p.online).length;
   if (activeCount < 3) {
@@ -1066,19 +1082,16 @@ function startNewRound() {
   const activeUserIds = Object.keys(players).filter(uid => players[uid].online);
   activeUserIds.forEach(uid => players[uid].isLiar = false);
 
-  // 1. 라이어 무작위 선정
   const shuffledForLiar = shuffleArray(activeUserIds);
   const actualLiarCount = Math.max(1, Math.min(roomSettings.liarCount, activeUserIds.length - 2));
   for (let i = 0; i < actualLiarCount; i++) {
     players[shuffledForLiar[i]].isLiar = true;
   }
 
-  // 2. 발언 순서 매 라운드마다 무작위 셔플 (라이어도 차례 보장)
   turnOrder = shuffleArray(activeUserIds);
   currentTurnIndex = 0;
   votes = {};
 
-  // 3. 각 플레이어에게 라운드 패킷 전달
   activeUserIds.forEach(uid => {
     const isPlayerLiar = players[uid].isLiar;
     const packet = {
@@ -1099,7 +1112,6 @@ function startNewRound() {
     }
   });
 
-  // 4. 첫 번째 발언자부터 시작
   setTimeout(() => {
     startSpeakerTurn(0);
   }, 1200);
@@ -1130,7 +1142,6 @@ function startRoundUI(data) {
   playSound(520, 0.15);
 }
 
-/* 상단 순서 칩 렌더링 */
 function renderTurnChips(activeIdx) {
   const chipsEl = document.getElementById('turnOrderChips');
   chipsEl.innerHTML = '';
@@ -1219,11 +1230,7 @@ function renderWordGrid(isGuessPhase = false) {
   });
 }
 
-/* ==========================================================
-   발언 페이즈 (모든 참가자 순서대로 1회씩 발언)
-   ========================================================== */
 function startSpeakerTurn(turnIdx) {
-  // 전원 발언 완료 시에만 투표 진입
   if (turnIdx >= turnOrder.length) {
     startVotingPhase();
     return;
@@ -1232,7 +1239,6 @@ function startSpeakerTurn(turnIdx) {
   currentTurnIndex = turnIdx;
   const currentSpeakerUid = turnOrder[turnIdx];
 
-  // 오프라인 참가자인 경우 다음 순서로 즉시 넘김
   if (!players[currentSpeakerUid] || !players[currentSpeakerUid].online) {
     startSpeakerTurn(turnIdx + 1);
     return;
@@ -1315,7 +1321,6 @@ function broadcastClue(speakerUid, text) {
   broadcast(packet);
   appendClueLog(speakerNick, text);
 
-  // 호스트가 현재 발언자의 발언 완료를 감지하고 다음 턴으로 1회만 안전하게 이동
   if (isHost && turnOrder[currentTurnIndex] === speakerUid) {
     clearInterval(phaseTimer);
     setTimeout(() => {
@@ -1334,9 +1339,6 @@ function appendClueLog(nick, text) {
   playSound(400, 0.04);
 }
 
-/* ==========================================================
-   투표 페이즈
-   ========================================================== */
 function startVotingPhase() {
   clearInterval(phaseTimer);
   currentPhase = 'VOTE';
@@ -1462,9 +1464,6 @@ function handleLiarGuessResult(liarUid, guessIndex) {
   finalizeRoundScores(false, isCorrect);
 }
 
-/* ==========================================================
-   점수 계산 및 라운드 결과 정산
-   ========================================================== */
 function finalizeRoundScores(liarEscaped, liarGuessedCorrectly) {
   currentPhase = 'ROUND_RESULT';
   let resultTitle = '';

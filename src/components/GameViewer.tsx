@@ -28,6 +28,7 @@ export default function GameViewer({ game }: { game: Game }) {
   
   const { theme, toggleTheme } = useTheme();
 
+  // PC 기준 최소 제한
   const minWidth = game.id === "liar-game" ? 480 : 440;
   const minHeight = 720;
 
@@ -186,7 +187,6 @@ export default function GameViewer({ game }: { game: Game }) {
         isFull ? "fixed inset-0 z-50 p-0" : "max-w-[1600px] mx-auto"
       }`}
     >
-      {/* 상단 컨트롤 바 */}
       <div
         className={`w-full flex flex-wrap items-center justify-between gap-2 mb-2.5 px-2 ${
           isFull
@@ -316,13 +316,11 @@ export default function GameViewer({ game }: { game: Game }) {
         </div>
       </div>
 
-      {/* 중앙 메인 영역 */}
       <div
         className={`w-full flex flex-col lg:flex-row gap-4 items-stretch justify-center ${
           isFull ? "flex-1 p-2" : ""
         }`}
       >
-        {/* 실시간 순위표 (진행도 게이지바 포함) */}
         {leaderboard.length > 0 && (
           <aside
             className={`w-full lg:w-72 border rounded-2xl p-4 flex flex-col shadow-xl order-2 lg:order-1 flex-shrink-0 transition-colors ${
@@ -408,7 +406,6 @@ export default function GameViewer({ game }: { game: Game }) {
                       </span>
                     </div>
 
-                    {/* 1 to 50 전용 실시간 진행도 게이지바 */}
                     {!isScoreGame && (
                       <div className={`w-full h-1.5 rounded-full overflow-hidden mt-1.5 ${
                         isDark ? "bg-slate-800" : "bg-slate-200"
@@ -432,7 +429,6 @@ export default function GameViewer({ game }: { game: Game }) {
           </aside>
         )}
 
-        {/* 메인 게임 프레임 */}
         <div
           ref={containerRef}
           style={
@@ -440,14 +436,13 @@ export default function GameViewer({ game }: { game: Game }) {
               ? { 
                   width: `${customSize.width}px`, 
                   height: `${customSize.height}px`,
-                  minWidth: `${minWidth}px`,
-                  minHeight: `${minHeight}px`
+                  minWidth: `min(100%, ${minWidth}px)`,
+                  minHeight: `min(100%, ${minHeight}px)`
                 }
               : !isFull
               ? {
-                  minWidth: `${minWidth}px`,
-                  minHeight: `${minHeight}px`,
-                  height: "720px"
+                  minWidth: `min(100%, ${minWidth}px)`,
+                  height: `${minHeight}px`
                 }
               : undefined
           }
@@ -491,7 +486,6 @@ export default function GameViewer({ game }: { game: Game }) {
         </div>
       </div>
 
-      {/* 하단 공유 바 */}
       {!isFull && (
         <div className={`w-full max-w-[1600px] mt-3 flex items-center justify-between text-xs px-2 shrink-0 ${
           isDark ? "text-slate-400" : "text-slate-600"
