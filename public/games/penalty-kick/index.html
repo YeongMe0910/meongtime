@@ -593,7 +593,7 @@ function playResultAnimation(result, ballTargetX, gkTargetX) {
   
   let msg = '';
   if(result === 'GOAL') msg = '🔥 GOAL!!';
-  if(result === 'SAVE') msg = '🛡️ SAVE!!';
+  if(result === 'SAVE') msg = '🧤 SAVE!!';
   if(result === 'MISS') msg = '❌ OUT!!';
   setStatus(msg, result === 'GOAL' ? 'status-danger' : 'status-highlight');
 
@@ -608,7 +608,9 @@ function playResultAnimation(result, ballTargetX, gkTargetX) {
       
       drawPitch();
       ctx.fillStyle = result==='GOAL'?'#ef4444':'#10b981';
-      ctx.font = '900 48px Arial'; ctx.textAlign = 'center';
+      ctx.font = '900 48px Arial'; 
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle'; // 세로 중앙 정렬 추가
       ctx.fillText(msg, 200, 250);
       
       if(prog < 1) requestAnimationFrame(animGk);
