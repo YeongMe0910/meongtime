@@ -92,8 +92,12 @@
     .rank-table th, .rank-table td { padding: 12px; text-align: center; border-bottom: 1px solid var(--card-border); font-size: 14px; font-weight: 700; }
     .rank-1 { color: var(--accent); font-size: 17px; font-weight: 900; }
 
+    /* =======================================================
+       💡 1to50 모바일 해상도 전용 최적화 (가로 480px 이하)
+       ======================================================= */
     @media (max-width: 480px) {
-      #app { padding: 6px; height: 100dvh; justify-content: flex-start; }
+      /* 앱 전체 정렬을 중앙으로 변경하여 위/아래 여백을 동일하게 분산 */
+      #app { padding: 6px; height: 100dvh; justify-content: center; }
       .card { padding: 16px; border-radius: 16px; }
       h1 { font-size: 22px; }
       .input-group input, .input-group select, .input-group button { padding: 10px; font-size: 13px; }
@@ -103,12 +107,13 @@
 
       .player-item { padding: 8px 12px; font-size: 12px; }
       
-      .game-top-bar { margin-bottom: 8px; margin-top: 10px; }
+      .game-top-bar { margin-bottom: 8px; margin-top: 0; }
       .target-box { font-size: 14px; padding: 4px 12px; }
       .timer { font-size: 18px; }
       .timer-limit { font-size: 10px; }
       
-      .grid-container { align-items: flex-start; }
+      /* 그리드를 상단 쏠림 방지 및 수직 중앙 배치 */
+      .grid-container { align-items: center; }
       .grid.size-sm { gap: 4px; max-width: 320px; }
       .grid.size-sm .tile { font-size: 16px; border-radius: 6px; }
       .grid.size-md { gap: 6px; max-width: 400px; }
@@ -125,6 +130,7 @@
 
 <div id="app">
   <div id="countdownOverlay">3</div>
+  
   <div id="viewMenu" class="view active">
     <div class="card">
       <h1>⚡ 1 TO 50 멀티</h1>
@@ -246,9 +252,6 @@ document.getElementById('btnJoinRoom').addEventListener('click', () => {
   });
 });
 
-/* ==========================================================
-   💡 방 코드 클릭/복사 분리 로직 (1to50 멀티)
-   ========================================================== */
 window.toggleRoomCode = function(e) {
   if (e) e.stopPropagation();
   isRoomCodeRevealed = !isRoomCodeRevealed;
