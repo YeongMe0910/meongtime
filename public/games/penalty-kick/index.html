@@ -316,7 +316,7 @@ function processKick(angle, speed) {
         const isLeft = targetX < 158;
         const isRight = targetX > 242;
         
-        if (Math.random() < 0.2) {
+        if (Math.random() < 0.25) {
            aiGkTargetX = targetX + (Math.random() * 30 - 15); // 공 위치 근처 방어
         } else {
            aiGkTargetX = GOAL_X1 + Math.random() * (GOAL_X2 - GOAL_X1);
@@ -327,7 +327,7 @@ function processKick(angle, speed) {
         currentKickData.timeout = setTimeout(() => {
         // 아무 입력이 없으면 골키퍼의 기본 위치(정중앙 X좌표: 200)로 간주
         const defaultGkX = 200;
-        const saveRange = 25; // 이전 단계에서 수정한 방어 반경을 똑같이 적용
+        const saveRange = 27; // 이전 단계에서 수정한 방어 반경을 똑같이 적용
         
         // 공이 가만히 있는 골키퍼 품(가운데)으로 정확히 날아왔다면 방어 성공 처리
         if (Math.abs(currentKickData.targetX - defaultGkX) <= saveRange) {
@@ -348,7 +348,7 @@ function processGkInput(gkTargetX, timeTaken) {
   
   // 유예 시간과 방어 반경(75)은 이전 단계에서 조절하신 최적의 수치를 유지합니다.
   if(timeTaken <= currentKickData.reactionTime + 150) {
-    const saveRange = 25; 
+    const saveRange = 27; 
     if(Math.abs(currentKickData.targetX - gkTargetX) <= saveRange) {
       result = 'SAVE';
     }
