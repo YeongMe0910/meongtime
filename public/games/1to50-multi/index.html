@@ -43,10 +43,24 @@
     .form-label { font-size: 12px; font-weight: 800; color: var(--text-sub); }
     .toggle-row { display: flex; justify-content: space-between; align-items: center; background: var(--input-bg); border: 1px solid var(--card-border); padding: 10px 14px; border-radius: 12px; }
 
-    .room-code-container { margin: 10px 0; display: flex; flex-direction: column; align-items: center; gap: 4px; }
-    .room-code-badge { width: 100%; background: var(--input-bg); border: 2px dashed var(--accent); padding: 14px; border-radius: 14px; text-align: center; font-size: 24px; font-weight: 900; letter-spacing: 4px; color: var(--accent); cursor: pointer; transition: all 0.15s ease; display: flex; align-items: center; justify-content: center; gap: 8px; }
-    .room-code-badge:hover { background: rgba(250, 204, 21, 0.08); transform: translateY(-1px); }
+    /* 대기실 방 코드 & 복사 버튼 분리 */
+    .room-code-container { margin: 10px 0; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .room-code-badge {
+      width: 100%; background: var(--input-bg); border: 2px dashed var(--accent);
+      padding: 12px; border-radius: 14px; text-align: center; font-size: 24px;
+      font-weight: 900; letter-spacing: 4px; color: var(--accent);
+      display: flex; align-items: center; justify-content: center; position: relative; transition: all 0.15s ease;
+    }
+    .room-code-text { cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; transition: opacity 0.15s ease; }
+    .room-code-text:hover { opacity: 0.7; }
+    .btn-copy-code {
+      position: absolute; right: 12px; background: var(--accent); color: var(--accent-text);
+      border: none; padding: 8px 14px; border-radius: 10px; font-size: 13px; font-weight: 800;
+      cursor: pointer; letter-spacing: 0; white-space: nowrap; transition: transform 0.1s;
+    }
+    .btn-copy-code:active { transform: scale(0.95); }
     .room-code-hint { font-size: 11px; font-weight: 700; color: var(--text-sub); }
+
     .room-info-bar { display: flex; justify-content: space-around; background: var(--input-bg); border: 1px solid var(--card-border); padding: 8px 12px; border-radius: 10px; font-size: 11px; font-weight: 800; color: var(--text-sub); margin-bottom: 8px; }
     .player-list { list-style: none; margin-top: 8px; display: flex; flex-direction: column; gap: 6px; overflow-y: auto; max-height: 180px; }
     .player-item { background: var(--input-bg); border: 1px solid var(--card-border); padding: 10px 14px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: 700; gap: 8px; }
@@ -78,15 +92,15 @@
     .rank-table th, .rank-table td { padding: 12px; text-align: center; border-bottom: 1px solid var(--card-border); font-size: 14px; font-weight: 700; }
     .rank-1 { color: var(--accent); font-size: 17px; font-weight: 900; }
 
-    /* =======================================================
-       💡 1to50 모바일 해상도 전용 최적화 (가로 480px 이하)
-       ======================================================= */
     @media (max-width: 480px) {
       #app { padding: 6px; height: 100dvh; justify-content: flex-start; }
       .card { padding: 16px; border-radius: 16px; }
       h1 { font-size: 22px; }
       .input-group input, .input-group select, .input-group button { padding: 10px; font-size: 13px; }
+      
       .room-code-badge { font-size: 20px; padding: 10px; }
+      .btn-copy-code { padding: 6px 12px; font-size: 12px; right: 8px; }
+
       .player-item { padding: 8px 12px; font-size: 12px; }
       
       .game-top-bar { margin-bottom: 8px; margin-top: 10px; }
@@ -108,7 +122,7 @@
   </style>
 </head>
 <body>
-<!-- 동일하게 유지되는 HTML & 스크립트 로직 생략 없이 모두 포함 -->
+
 <div id="app">
   <div id="countdownOverlay">3</div>
   <div id="viewMenu" class="view active">
@@ -139,8 +153,14 @@
   <div id="viewLobby" class="view">
     <div class="card">
       <h2 style="text-align: center; font-size: 20px;">대기실</h2>
-      <p class="subtitle">방 코드를 눌러 확인 및 복사하세요!</p>
-      <div class="room-code-container"><div id="roomCodeDisplay" class="room-code-badge"><span>🔒</span><span>• • • •</span></div></div>
+      <p class="subtitle">방 코드를 공개한 뒤 복사하여 공유하세요! (제한시간 80초)</p>
+      
+      <!-- 방 코드 & 복사 영역 -->
+      <div class="room-code-container">
+        <div id="roomCodeDisplay" class="room-code-badge"></div>
+        <span id="roomCodeHint" class="room-code-hint">클릭하여 방 코드 확인</span>
+      </div>
+
       <div class="room-info-bar"><span>정원: <span id="infoMaxPlayers">8</span>명</span><span>닉네임: <span id="infoNickRule">자유</span></span><span>금지어: <span id="infoBannedCount">0</span>개</span></div>
       <div style="font-size: 13px; font-weight: 700; color: var(--text-sub); margin-top: 4px;">참가자 (<span id="playerCount">1</span>/<span id="maxCountDisplay">8</span>명)</div>
       <ul id="playerList" class="player-list"></ul>
@@ -226,10 +246,45 @@ document.getElementById('btnJoinRoom').addEventListener('click', () => {
   });
 });
 
+/* ==========================================================
+   💡 방 코드 클릭/복사 분리 로직 (1to50 멀티)
+   ========================================================== */
+window.toggleRoomCode = function(e) {
+  if (e) e.stopPropagation();
+  isRoomCodeRevealed = !isRoomCodeRevealed;
+  renderRoomCodeBadge();
+};
+
+window.copyRoomCode = function(e) {
+  if (e) e.stopPropagation();
+  navigator.clipboard.writeText(roomCode);
+  alert(`방 코드 [${roomCode}]가 복사되었습니다!`);
+};
+
+function renderRoomCodeBadge() {
+  const badge = document.getElementById('roomCodeDisplay');
+  const hintEl = document.getElementById('roomCodeHint');
+
+  if (!isRoomCodeRevealed) {
+    badge.innerHTML = `
+      <div class="room-code-text" onclick="toggleRoomCode(event)">
+        <span>🔒</span><span>• • • •</span>
+      </div>
+    `;
+    if (hintEl) hintEl.textContent = '클릭하여 방 코드 확인';
+  } else {
+    badge.innerHTML = `
+      <div class="room-code-text" onclick="toggleRoomCode(event)">
+        <span>🔓</span><span>${roomCode}</span>
+      </div>
+      <button class="btn-copy-code" onclick="copyRoomCode(event)">복사</button>
+    `;
+    if (hintEl) hintEl.textContent = '우측 버튼을 눌러 복사 (코드 클릭 시 숨김)';
+  }
+}
+
 function setupLobbyUI() {
-  showView('lobby'); isRoomCodeRevealed = false;
-  document.getElementById('roomCodeDisplay').innerHTML = `<span>🔒</span><span>• • • •</span>`;
-  document.getElementById('roomCodeDisplay').onclick = () => { isRoomCodeRevealed = !isRoomCodeRevealed; document.getElementById('roomCodeDisplay').innerHTML = isRoomCodeRevealed ? `<span>🔓</span><span>${roomCode}</span>` : `<span>🔒</span><span>• • • •</span>`; if (isRoomCodeRevealed) navigator.clipboard.writeText(roomCode); };
+  showView('lobby'); isRoomCodeRevealed = false; renderRoomCodeBadge();
   document.getElementById('infoMaxPlayers').textContent = roomSettings.maxPlayers; document.getElementById('maxCountDisplay').textContent = roomSettings.maxPlayers; document.getElementById('infoNickRule').textContent = roomSettings.allowCustomNickname ? '자유' : '랜덤강제'; document.getElementById('infoBannedCount').textContent = roomSettings.bannedWords.length;
   if (isHost) { document.getElementById('btnStartGame').style.display = 'block'; document.getElementById('waitingHostText').style.display = 'none'; } else { document.getElementById('btnStartGame').style.display = 'none'; document.getElementById('waitingHostText').style.display = 'block'; }
   renderLobbyList();

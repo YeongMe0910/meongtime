@@ -23,7 +23,7 @@
       --accent: #facc15;
       --accent-text: #0f172a;
       --citizen-red: #ef4444;
-      --citizen-glow: rgba(239, 68, 68, 0.5);
+      --citizen-glow: rgba(239, 68, 68, 0.45);
     }
 
     body.light {
@@ -39,10 +39,9 @@
       --accent: #eab308;
       --accent-text: #ffffff;
       --citizen-red: #dc2626;
-      --citizen-glow: rgba(220, 38, 38, 0.4);
+      --citizen-glow: rgba(220, 38, 38, 0.35);
     }
 
-    /* 💡 잘림 방지: overflow-y를 auto로 변경하고 최상단부터 정렬 */
     body, html {
       width: 100%; height: 100%;
       background: var(--bg-color); color: var(--text-main);
@@ -51,24 +50,12 @@
       overflow-x: hidden; overflow-y: auto; transition: background-color 0.2s, color 0.2s;
     }
 
-    /* 💡 잘림 방지: 강제 height 대신 min-height 적용 및 여백 부여 */
     #app {
-      width: 100%;
-      max-width: 680px;
-      min-height: 100%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      padding: 24px 10px;
-      position: relative;
+      width: 100%; max-width: 680px; min-height: 100%; display: flex; flex-direction: column;
+      align-items: center; justify-content: flex-start; padding: 24px 10px; position: relative;
     }
 
-    /* 💡 여유 공간이 있을 때만 수직 중앙 정렬되도록 margin 자동 할당 */
-    .view { 
-      display: none; width: 100%; margin: auto 0; 
-      flex-direction: column; justify-content: center; 
-    }
+    .view { display: none; width: 100%; margin: auto 0; flex-direction: column; justify-content: center; }
     .view.active { display: flex; }
 
     .card {
@@ -87,117 +74,73 @@
     }
     input:focus, select:focus { border-color: var(--accent); }
     button {
-      background: var(--accent); color: var(--accent-text); border: none;
-      padding: 12px; border-radius: 12px; font-size: 14px; font-weight: 800;
-      cursor: pointer; transition: transform 0.1s, opacity 0.2s;
+      background: var(--accent); color: var(--accent-text); border: none; padding: 12px; border-radius: 12px;
+      font-size: 14px; font-weight: 800; cursor: pointer; transition: transform 0.1s, opacity 0.2s;
     }
     button:active { transform: scale(0.98); }
     button.secondary { background: var(--tile-bg); color: var(--text-main); border: 1px solid var(--card-border); }
     button:disabled { opacity: 0.4; cursor: not-allowed; }
 
-    /* 모달 */
     .modal-overlay {
       position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
       display: none; align-items: center; justify-content: center; z-index: 100; padding: 16px;
     }
     .modal-overlay.active { display: flex; }
     .modal-content {
-      background: var(--card-bg); border: 1px solid var(--card-border);
-      border-radius: 20px; padding: 22px; width: 100%; max-width: 440px;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.5); max-height: 90vh; overflow-y: auto;
+      background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 20px;
+      padding: 22px; width: 100%; max-width: 440px; box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+      max-height: 90vh; overflow-y: auto;
     }
     .form-item { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
     .form-label { font-size: 12px; font-weight: 800; color: var(--text-sub); }
-    .toggle-row {
-      display: flex; justify-content: space-between; align-items: center;
-      background: var(--input-bg); border: 1px solid var(--card-border);
-      padding: 10px 14px; border-radius: 12px;
-    }
+    .toggle-row { display: flex; justify-content: space-between; align-items: center; background: var(--input-bg); border: 1px solid var(--card-border); padding: 10px 14px; border-radius: 12px; }
 
-    /* 대기실 */
-    .room-code-container { margin: 10px 0; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    /* 대기실 방 코드 & 복사 버튼 분리 */
+    .room-code-container { margin: 10px 0; display: flex; flex-direction: column; align-items: center; gap: 6px; }
     .room-code-badge {
       width: 100%; background: var(--input-bg); border: 2px dashed var(--accent);
       padding: 12px; border-radius: 14px; text-align: center; font-size: 24px;
-      font-weight: 900; letter-spacing: 4px; color: var(--accent); cursor: pointer;
+      font-weight: 900; letter-spacing: 4px; color: var(--accent);
+      display: flex; align-items: center; justify-content: center; position: relative;
     }
-    .room-info-bar {
-      display: flex; justify-content: space-around; background: var(--input-bg);
-      border: 1px solid var(--card-border); padding: 8px 12px; border-radius: 10px;
-      font-size: 11px; font-weight: 800; color: var(--text-sub); margin-bottom: 8px;
+    .room-code-text { cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; transition: opacity 0.15s ease; }
+    .room-code-text:hover { opacity: 0.7; }
+    .btn-copy-code {
+      position: absolute; right: 12px; background: var(--accent); color: var(--accent-text);
+      border: none; padding: 8px 14px; border-radius: 10px; font-size: 13px; font-weight: 800;
+      cursor: pointer; letter-spacing: 0; white-space: nowrap; transition: transform 0.1s;
     }
+    .btn-copy-code:active { transform: scale(0.95); }
+    .room-code-hint { font-size: 11px; font-weight: 700; color: var(--text-sub); }
+
+    .room-info-bar { display: flex; justify-content: space-around; background: var(--input-bg); border: 1px solid var(--card-border); padding: 8px 12px; border-radius: 10px; font-size: 11px; font-weight: 800; color: var(--text-sub); margin-bottom: 8px; }
     .player-list { list-style: none; margin-top: 6px; display: flex; flex-direction: column; gap: 6px; overflow-y: auto; max-height: 180px; }
-    .player-item {
-      background: var(--input-bg); border: 1px solid var(--card-border); padding: 10px 14px;
-      border-radius: 10px; display: flex; justify-content: space-between; align-items: center;
-      font-size: 13px; font-weight: 700;
-    }
+    .player-item { background: var(--input-bg); border: 1px solid var(--card-border); padding: 10px 14px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: 700; }
     .btn-kick { background: #ef4444; color: #fff; border: none; padding: 4px 8px; border-radius: 6px; font-size: 11px; cursor: pointer; }
 
-    /* 공개 방 목록 */
     .room-list-container { margin-top: 12px; border-top: 1px solid var(--card-border); padding-top: 10px; flex: 1; max-height: 180px; display: flex; flex-direction: column; }
     .room-list-scroll { list-style: none; display: flex; flex-direction: column; gap: 6px; overflow-y: auto; flex: 1; }
-    .room-item-card {
-      background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 10px;
-      padding: 8px 12px; display: flex; justify-content: space-between; align-items: center;
-    }
+    .room-item-card { background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 10px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; }
 
-    /* 💡 잘림 방지: 내부 공간이 부족해도 아이템을 위아래로 밀어내지 않고 자연스럽게 쌓이게 배치 */
-    #viewGame {
-      display: flex; flex-direction: column; justify-content: flex-start; gap: 12px;
-    }
-
-    .game-header {
-      width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;
-    }
-    .theme-badge {
-      background: var(--accent); color: var(--accent-text); padding: 6px 14px;
-      border-radius: 999px; font-size: 14px; font-weight: 900;
-    }
+    #viewGame { display: flex; flex-direction: column; justify-content: flex-start; gap: 12px; }
+    .game-header { width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+    .theme-badge { background: var(--accent); color: var(--accent-text); padding: 6px 14px; border-radius: 999px; font-size: 14px; font-weight: 900; }
     .phase-badge { font-size: 13px; font-weight: 800; color: #38bdf8; }
     .game-timer { font-size: 20px; font-weight: 900; font-family: monospace; color: #38bdf8; }
 
-    /* 4x4 단어 격자판 */
-    .word-grid {
-      display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(4, 1fr);
-      gap: 6px; width: 100%; max-width: 520px; height: 240px; margin: 0 auto;
-    }
-    .word-tile {
-      background: var(--tile-bg); border: 1.5px solid var(--tile-border);
-      color: var(--tile-text); border-radius: 10px; font-size: clamp(12px, 3.2vw, 15px);
-      font-weight: 800; display: flex; align-items: center; justify-content: center;
-      text-align: center; padding: 4px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-      transition: transform 0.1s, border-color 0.2s, background 0.2s;
-    }
-
-    .word-tile.target-citizen {
-      background: #ef4444 !important; border: 2px solid #ffffff !important;
-      color: #ffffff !important; box-shadow: 0 0 16px var(--citizen-glow) !important;
-      transform: scale(1.03); z-index: 2;
-    }
-
+    .word-grid { display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(4, 1fr); gap: 6px; width: 100%; max-width: 520px; height: 240px; margin: 0 auto; }
+    .word-tile { background: var(--tile-bg); border: 1.5px solid var(--tile-border); color: var(--tile-text); border-radius: 10px; font-size: clamp(12px, 3.2vw, 15px); font-weight: 800; display: flex; align-items: center; justify-content: center; text-align: center; padding: 4px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: transform 0.1s, border-color 0.2s, background 0.2s; }
+    .word-tile.target-citizen { background: #ef4444 !important; border: 2px solid #ffffff !important; color: #ffffff !important; box-shadow: 0 0 16px var(--citizen-glow) !important; transform: scale(1.03); z-index: 2; }
     .word-tile.guessable { cursor: pointer; }
     .word-tile.guessable:hover { border-color: var(--accent); background: rgba(250, 204, 21, 0.2); }
 
-    .turn-status-card {
-      width: 100%; max-width: 520px; background: var(--input-bg);
-      border: 1px solid var(--card-border); border-radius: 12px; padding: 8px 12px;
-      margin: 0 auto; display: flex; flex-direction: column; gap: 4px;
-    }
+    .turn-status-card { width: 100%; max-width: 520px; background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 8px 12px; margin: 0 auto; display: flex; flex-direction: column; gap: 4px; }
     .turn-order-chips { display: flex; gap: 4px; overflow-x: auto; padding-bottom: 2px; }
-    .turn-chip {
-      font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 6px;
-      background: var(--tile-bg); color: var(--text-sub); border: 1px solid var(--card-border); white-space: nowrap;
-    }
+    .turn-chip { font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 6px; background: var(--tile-bg); color: var(--text-sub); border: 1px solid var(--card-border); white-space: nowrap; }
     .turn-chip.active { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
     .turn-chip.done { opacity: 0.5; text-decoration: line-through; }
 
-    /* 💡 잘림 방지: 가변 flex 대신 고정 높이를 주어 안정적인 레이아웃 보장 */
-    .clue-log {
-      width: 100%; max-width: 520px; height: 110px; background: var(--input-bg);
-      border: 1px solid var(--card-border); border-radius: 12px; padding: 8px 12px;
-      overflow-y: auto; display: flex; flex-direction: column; gap: 4px; font-size: 12px; margin: 0 auto;
-    }
+    .clue-log { width: 100%; max-width: 520px; height: 110px; background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 8px 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; font-size: 12px; margin: 0 auto; }
     .clue-msg { display: flex; gap: 6px; }
     .clue-speaker { font-weight: 800; color: var(--accent); shrink: 0; }
     .clue-text { color: var(--text-main); word-break: break-all; }
@@ -206,27 +149,14 @@
     .clue-input-bar input { flex: 1; padding: 8px 12px; font-size: 13px; }
     .clue-input-bar button { padding: 8px 14px; font-size: 13px; }
 
-    .vote-grid {
-      display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-      gap: 6px; width: 100%; max-width: 520px; max-height: 130px; overflow-y: auto; margin: 4px auto 0 auto;
-    }
-    .vote-btn {
-      background: var(--input-bg); border: 1px solid var(--card-border);
-      color: var(--text-main); padding: 8px 10px; border-radius: 10px;
-      font-size: 12px; font-weight: 800; cursor: pointer; display: flex;
-      justify-content: space-between; align-items: center;
-    }
+    .vote-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 6px; width: 100%; max-width: 520px; max-height: 130px; overflow-y: auto; margin: 4px auto 0 auto; }
+    .vote-btn { background: var(--input-bg); border: 1px solid var(--card-border); color: var(--text-main); padding: 8px 10px; border-radius: 10px; font-size: 12px; font-weight: 800; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
     .vote-btn.selected { border-color: var(--accent); background: rgba(250, 204, 21, 0.15); }
 
     .scoreboard-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    .scoreboard-table th, .scoreboard-table td {
-      padding: 8px; text-align: center; border-bottom: 1px solid var(--card-border); font-size: 13px;
-    }
+    .scoreboard-table th, .scoreboard-table td { padding: 8px; text-align: center; border-bottom: 1px solid var(--card-border); font-size: 13px; }
     .rank-1 { color: var(--accent); font-weight: 900; }
 
-    /* =======================================================
-       📱 모바일 환경 최적화 (가로 480px 이하)
-       ======================================================= */
     @media (max-width: 480px) {
       #app { padding: 12px 6px; }
       .card { padding: 16px; border-radius: 16px; }
@@ -234,22 +164,19 @@
       .subtitle { font-size: 11px; }
       .input-group input, .input-group select, .input-group button { padding: 10px; font-size: 13px; }
       .room-code-badge { font-size: 20px; padding: 10px; }
+      .btn-copy-code { padding: 6px 12px; font-size: 12px; right: 8px; }
       
       #viewGame { gap: 8px; }
       .game-header { margin-bottom: 2px; }
       .theme-badge { font-size: 12px; padding: 4px 10px; }
       .game-timer { font-size: 16px; }
-      
       .word-grid { height: auto; aspect-ratio: 1/1; gap: 4px; }
       .word-tile { font-size: clamp(10px, 3.5vw, 13px); border-radius: 6px; padding: 2px; }
-      
       .turn-status-card { padding: 6px 10px; margin-bottom: 2px; }
       .turn-chip { font-size: 10px; padding: 2px 6px; }
-      
       .clue-log { height: 90px; font-size: 11px; padding: 6px 10px; }
       .clue-input-bar input { padding: 8px 10px; font-size: 12px; }
       .clue-input-bar button { padding: 8px 12px; font-size: 12px; }
-      
       .vote-grid { grid-template-columns: repeat(2, 1fr); max-height: 120px; margin-top: 4px; }
       .vote-btn { padding: 6px 8px; font-size: 11px; }
     }
@@ -258,12 +185,10 @@
 <body>
 
 <div id="app">
-  <!-- 1. 메뉴 화면 -->
   <div id="viewMenu" class="view active">
     <div class="card">
       <h1>🕵️ 16단어 라이어 게임</h1>
       <p class="subtitle">16개 단어 중 정답을 모르는 라이어를 찾아라!</p>
-
       <div class="input-group">
         <input type="text" id="nicknameInput" placeholder="닉네임 입력 (미입력 시 랜덤)" maxlength="16" />
         <button id="btnOpenCreateModal">방 만들기 (설정)</button>
@@ -272,209 +197,83 @@
           <button id="btnJoinRoom" class="secondary" style="flex: 1;">코드 입장</button>
         </div>
       </div>
-
       <div class="room-list-container">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
           <span style="font-size: 12px; font-weight: 900; color: var(--accent);">🌐 공개 방 (<span id="publicRoomCount">0</span>)</span>
           <button id="btnRefreshRooms" class="secondary" style="padding: 4px 8px; font-size: 11px;">새로고침 ↻</button>
         </div>
-        <ul id="publicRoomList" class="room-list-scroll">
-          <li style="text-align: center; font-size: 12px; color: var(--text-sub); padding: 18px 0;">공개 방을 찾는 중...</li>
-        </ul>
+        <ul id="publicRoomList" class="room-list-scroll"><li style="text-align: center; font-size: 12px; color: var(--text-sub); padding: 18px 0;">공개 방을 찾는 중...</li></ul>
       </div>
     </div>
   </div>
 
-  <!-- 1-1. 방 설정 모달 -->
   <div id="createRoomModal" class="modal-overlay">
     <div class="modal-content">
       <h2 style="font-size: 18px; font-weight: 900; color: var(--accent); text-align: center; margin-bottom: 14px;">⚙️ 라이어 게임 방 설정</h2>
-
-      <div class="form-item">
-        <label class="form-label">방 공개 여부</label>
-        <select id="modalIsPublic">
-          <option value="true" selected>🌐 공개 방</option>
-          <option value="false">🔒 비공개 방 (코드로만 입장)</option>
-        </select>
-      </div>
-
-      <div class="form-item">
-        <label class="form-label">최대 인원 (3~16명)</label>
-        <select id="modalMaxPlayers">
-          <option value="4">4명</option>
-          <option value="6">6명</option>
-          <option value="8" selected>8명 (권장)</option>
-          <option value="12">12명</option>
-          <option value="16">16명 (최대)</option>
-        </select>
-      </div>
-
-      <div class="form-item">
-        <label class="form-label">라이어 수</label>
-        <select id="modalLiarCount">
-          <option value="1" selected>1명 (기본)</option>
-          <option value="2">2명 (6인 이상 추천)</option>
-          <option value="3">3명 (10인 이상 추천)</option>
-        </select>
-      </div>
-
-      <div class="form-item">
-        <label class="form-label">인당 설명 시간</label>
-        <select id="modalSpeakTime">
-          <option value="15">15초 (빠름)</option>
-          <option value="25" selected>25초 (보통)</option>
-          <option value="40">40초 (여유)</option>
-        </select>
-      </div>
-
-      <div class="form-item">
-        <label class="form-label">투표 제한시간</label>
-        <select id="modalVoteTime">
-          <option value="15">15초</option>
-          <option value="25" selected>25초</option>
-          <option value="40">40초</option>
-        </select>
-      </div>
-
-      <div class="form-item">
-        <label class="form-label">목표 승리 점수</label>
-        <select id="modalTargetScore">
-          <option value="3">3점 (짧은 게임)</option>
-          <option value="5" selected>5점 (표준 게임)</option>
-          <option value="8">8점 (긴 게임)</option>
-        </select>
-      </div>
-
-      <div class="form-item">
-        <label class="form-label">닉네임 직접 입력 규칙</label>
-        <div class="toggle-row">
-          <span style="font-size: 13px; font-weight: 700;">자유 닉네임 허용</span>
-          <input type="checkbox" id="modalAllowCustomNick" checked style="width: 18px; height: 18px;" />
-        </div>
-      </div>
-
-      <div class="form-item">
-        <label class="form-label">금지 단어 (쉼표 구분)</label>
-        <input type="text" id="modalBannedWords" placeholder="예: 바보, 욕설" />
-      </div>
-
-      <div style="display: flex; gap: 8px; margin-top: 14px;">
-        <button id="btnCancelModal" class="secondary" style="flex: 1;">취소</button>
-        <button id="btnConfirmCreateRoom" style="flex: 2;">방 만들기</button>
-      </div>
+      <div class="form-item"><label class="form-label">방 공개 여부</label><select id="modalIsPublic"><option value="true" selected>🌐 공개 방</option><option value="false">🔒 비공개 방 (코드로만 입장)</option></select></div>
+      <div class="form-item"><label class="form-label">최대 인원 (3~16명)</label><select id="modalMaxPlayers"><option value="4">4명</option><option value="6">6명</option><option value="8" selected>8명 (권장)</option><option value="12">12명</option><option value="16">16명 (최대)</option></select></div>
+      <div class="form-item"><label class="form-label">라이어 수</label><select id="modalLiarCount"><option value="1" selected>1명 (기본)</option><option value="2">2명 (6인 이상 추천)</option><option value="3">3명 (10인 이상 추천)</option></select></div>
+      <div class="form-item"><label class="form-label">인당 설명 시간</label><select id="modalSpeakTime"><option value="15">15초 (빠름)</option><option value="25" selected>25초 (보통)</option><option value="40">40초 (여유)</option></select></div>
+      <div class="form-item"><label class="form-label">투표 제한시간</label><select id="modalVoteTime"><option value="15">15초</option><option value="25" selected>25초</option><option value="40">40초</option></select></div>
+      <div class="form-item"><label class="form-label">목표 승리 점수</label><select id="modalTargetScore"><option value="3">3점 (짧은 게임)</option><option value="5" selected>5점 (표준 게임)</option><option value="8">8점 (긴 게임)</option></select></div>
+      <div class="form-item"><label class="form-label">닉네임 직접 입력 규칙</label><div class="toggle-row"><span style="font-size: 13px; font-weight: 700;">자유 닉네임 허용</span><input type="checkbox" id="modalAllowCustomNick" checked style="width: 18px; height: 18px;" /></div></div>
+      <div class="form-item"><label class="form-label">금지 단어 (쉼표 구분)</label><input type="text" id="modalBannedWords" placeholder="예: 바보, 욕설" /></div>
+      <div style="display: flex; gap: 8px; margin-top: 14px;"><button id="btnCancelModal" class="secondary" style="flex: 1;">취소</button><button id="btnConfirmCreateRoom" style="flex: 2;">방 만들기</button></div>
     </div>
   </div>
 
-  <!-- 2. 대기실 화면 -->
   <div id="viewLobby" class="view">
     <div class="card">
       <h2 style="text-align: center; font-size: 18px;">대기실</h2>
-      <p class="subtitle">방 코드를 눌러 확인 및 복사하세요!</p>
-
+      <p class="subtitle">방 코드를 공개한 뒤 복사하여 공유하세요!</p>
+      
+      <!-- 방 코드 & 복사 영역 -->
       <div class="room-code-container">
-        <div id="roomCodeDisplay" class="room-code-badge"><span>🔒</span><span>• • • •</span></div>
+        <div id="roomCodeDisplay" class="room-code-badge"></div>
+        <span id="roomCodeHint" class="room-code-hint">클릭하여 방 코드 공개</span>
       </div>
 
-      <div class="room-info-bar">
-        <span>정원: <span id="infoMaxPlayers">8</span>명</span>
-        <span>라이어: <span id="infoLiarCount">1</span>명</span>
-        <span>목표: <span id="infoTargetScore">5</span>점</span>
-      </div>
-
-      <div style="font-size: 13px; font-weight: 700; color: var(--text-sub); margin-top: 4px;">
-        참가자 (<span id="playerCount">1</span>/<span id="maxCountDisplay">8</span>명) - 최소 3명 필요
-      </div>
+      <div class="room-info-bar"><span>정원: <span id="infoMaxPlayers">8</span>명</span><span>라이어: <span id="infoLiarCount">1</span>명</span><span>목표: <span id="infoTargetScore">5</span>점</span></div>
+      <div style="font-size: 13px; font-weight: 700; color: var(--text-sub); margin-top: 4px;">참가자 (<span id="playerCount">1</span>/<span id="maxCountDisplay">8</span>명) - 최소 3명 필요</div>
       <ul id="playerList" class="player-list"></ul>
-
       <button id="btnStartGame" style="margin-top: 12px; display: none;">게임 시작!</button>
-      <div id="waitingHostText" style="text-align: center; font-size: 13px; color: var(--text-sub); padding: 12px; display: none;">
-        방장이 게임을 시작하기를 기다리는 중...
-      </div>
+      <div id="waitingHostText" style="text-align: center; font-size: 13px; color: var(--text-sub); padding: 12px; display: none;">방장이 게임을 시작하기를 기다리는 중...</div>
     </div>
   </div>
 
-  <!-- 3. 인게임 화면 -->
   <div id="viewGame" class="view">
-    <div class="game-header">
-      <div class="theme-badge">주제: <span id="currentThemeName">동물</span></div>
-      <div class="phase-badge" id="currentPhaseText">발언 페이즈</div>
-      <div class="game-timer" id="phaseTimer">25s</div>
-    </div>
-
-    <!-- 16단어 격자판 -->
+    <div class="game-header"><div class="theme-badge">주제: <span id="currentThemeName">동물</span></div><div class="phase-badge" id="currentPhaseText">발언 페이즈</div><div class="game-timer" id="phaseTimer">25s</div></div>
     <div class="word-grid" id="wordGrid"></div>
-
-    <!-- 발언 알림 & 전체 순서 진행 트래커 -->
     <div class="turn-status-card" id="turnStatusCard">
-      <div style="display: flex; justify-content: space-between; align-items: center;">
-        <span style="font-size: 12px; font-weight: 800;" id="currentSpeakerLabel">🎙️ 발언 차례: 플레이어</span>
-        <span style="font-size: 11px; color: var(--text-sub);" id="myRoleHint">시민 (빨간 단어 확인)</span>
-      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center;"><span style="font-size: 12px; font-weight: 800;" id="currentSpeakerLabel">🎙️ 발언 차례: 플레이어</span><span style="font-size: 11px; color: var(--text-sub);" id="myRoleHint">시민 (빨간 단어 확인)</span></div>
       <div class="turn-order-chips" id="turnOrderChips"></div>
     </div>
-
-    <!-- 힌트 로그 -->
     <div class="clue-log" id="clueLog"></div>
-
-    <!-- 발언 입력창 -->
-    <div class="clue-input-bar" id="clueInputContainer">
-      <input type="text" id="clueInput" placeholder="단어에 대한 힌트 한마디를 입력하세요..." maxlength="40" disabled />
-      <button id="btnSendClue" disabled>말하기</button>
-    </div>
-
-    <!-- 투표 영역 -->
+    <div class="clue-input-bar" id="clueInputContainer"><input type="text" id="clueInput" placeholder="단어에 대한 힌트 한마디를 입력하세요..." maxlength="40" disabled /><button id="btnSendClue" disabled>말하기</button></div>
     <div class="vote-grid" id="voteGrid" style="display: none;"></div>
   </div>
 
-  <!-- 4. 라운드 결과 모달 -->
   <div id="roundResultModal" class="modal-overlay">
     <div class="modal-content" style="text-align: center;">
       <h2 id="resultTitle" style="font-size: 22px; font-weight: 900; color: var(--accent);">🏆 라운드 종료</h2>
       <p id="resultDesc" style="font-size: 13px; color: var(--text-sub); margin: 8px 0;"></p>
-
       <div style="background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 12px; margin: 12px 0;">
         <div style="font-size: 12px; color: var(--text-sub);">이번 라운드 정답 단어</div>
         <div id="resultSecretWord" style="font-size: 20px; font-weight: 900; color: var(--citizen-red); margin-top: 4px;">-</div>
         <div id="resultLiarList" style="font-size: 12px; color: var(--accent); margin-top: 6px; font-weight: 800;">라이어: -</div>
       </div>
-
-      <table class="scoreboard-table">
-        <thead>
-          <tr style="color: var(--text-sub);">
-            <th>순위</th>
-            <th>닉네임</th>
-            <th>점수</th>
-          </tr>
-        </thead>
-        <tbody id="roundScoreTableBody"></tbody>
-      </table>
-
+      <table class="scoreboard-table"><thead><tr style="color: var(--text-sub);"><th>순위</th><th>닉네임</th><th>점수</th></tr></thead><tbody id="roundScoreTableBody"></tbody></table>
       <button id="btnNextRound" style="margin-top: 14px; width: 100%; display: none;">다음 라운드 진행</button>
       <div id="waitingNextRoundText" style="font-size: 12px; color: var(--text-sub); margin-top: 12px;">방장이 다음 라운드를 시작할 때까지 대기 중...</div>
     </div>
   </div>
 
-  <!-- 5. 최종 승리 화면 -->
   <div id="viewFinalWin" class="view">
     <div class="card" style="text-align: center;">
       <h1>🎉 최종 게임 종료</h1>
       <p class="subtitle">목표 점수에 먼저 도달한 최종 승자!</p>
-
-      <div id="finalWinnerBanner" style="font-size: 24px; font-weight: 900; color: var(--accent); margin: 16px 0;">
-        🥇 우승자: -
-      </div>
-
-      <table class="scoreboard-table">
-        <thead>
-          <tr style="color: var(--text-sub);">
-            <th>순위</th>
-            <th>닉네임</th>
-            <th>최종 점수</th>
-          </tr>
-        </thead>
-        <tbody id="finalScoreTableBody"></tbody>
-      </table>
-
+      <div id="finalWinnerBanner" style="font-size: 24px; font-weight: 900; color: var(--accent); margin: 16px 0;">🥇 우승자: -</div>
+      <table class="scoreboard-table"><thead><tr style="color: var(--text-sub);"><th>순위</th><th>닉네임</th><th>최종 점수</th></tr></thead><tbody id="finalScoreTableBody"></tbody></table>
       <button id="btnBackToLobbyFromWin" style="margin-top: 16px; width: 100%;">대기실로 돌아가기</button>
     </div>
   </div>
@@ -482,48 +281,12 @@
 
 <script>
 const WORD_DATABASE = [
-  {
-    theme: "동물 🦁",
-    words: [
-      "사자", "호랑이", "코끼리", "기린", "판다", "펭귄", "독수리", "고래",
-      "캥거루", "원숭이", "늑대", "얼룩말", "하마", "악어", "사슴", "토끼"
-    ]
-  },
-  {
-    theme: "음식 & 간식 🍕",
-    words: [
-      "피자", "치킨", "떡볶이", "김치찌개", "삼겹살", "초밥", "파스타", "햄버거",
-      "라면", "돈까스", "족발", "비빔밥", "탕수육", "마라탕", "핫도그", "샌드위치"
-    ]
-  },
-  {
-    theme: "직업 👨‍⚕️",
-    words: [
-      "의사", "경찰", "소방관", "요리사", "선생님", "프로그래머", "우주비행사", "판사",
-      "가수", "운동선수", "마술사", "승무원", "기자", "화가", "파일럿", "건축가"
-    ]
-  },
-  {
-    theme: "장소 & 시설 🎡",
-    words: [
-      "공항", "병원", "놀이공원", "동물원", "영화관", "도서관", "박물관", "수영장",
-      "경찰서", "학교", "마트", "사우나", "은행", "호텔", "지하철역", "캠핑장"
-    ]
-  },
-  {
-    theme: "유명 캐릭터 🦸",
-    words: [
-      "아이언맨", "스파이더맨", "피카츄", "엘사", "배트맨", "짱구", "뽀로로", "손오공",
-      "해리포터", "미키마우스", "헐크", "셜록홈즈", "슈렉", "조커", "마리오", "도라에몽"
-    ]
-  },
-  {
-    theme: "가전 & 전자기기 📱",
-    words: [
-      "스마트폰", "냉장고", "세탁기", "전자레인지", "청소기", "에어컨", "텔레비전", "노트북",
-      "헤어드라이어", "게임기", "선풍기", "카메라", "태블릿", "공기청정기", "스피커", "스마트워치"
-    ]
-  }
+  { theme: "동물 🦁", words: ["사자", "호랑이", "코끼리", "기린", "판다", "펭귄", "독수리", "고래", "캥거루", "원숭이", "늑대", "얼룩말", "하마", "악어", "사슴", "토끼"] },
+  { theme: "음식 & 간식 🍕", words: ["피자", "치킨", "떡볶이", "김치찌개", "삼겹살", "초밥", "파스타", "햄버거", "라면", "돈까스", "족발", "비빔밥", "탕수육", "마라탕", "핫도그", "샌드위치"] },
+  { theme: "직업 👨‍⚕️", words: ["의사", "경찰", "소방관", "요리사", "선생님", "프로그래머", "우주비행사", "판사", "가수", "운동선수", "마술사", "승무원", "기자", "화가", "파일럿", "건축가"] },
+  { theme: "장소 & 시설 🎡", words: ["공항", "병원", "놀이공원", "동물원", "영화관", "도서관", "박물관", "수영장", "경찰서", "학교", "마트", "사우나", "은행", "호텔", "지하철역", "캠핑장"] },
+  { theme: "유명 캐릭터 🦸", words: ["아이언맨", "스파이더맨", "피카츄", "엘사", "배트맨", "짱구", "뽀로로", "손오공", "해리포터", "미키마우스", "헐크", "셜록홈즈", "슈렉", "조커", "마리오", "도라에몽"] },
+  { theme: "가전 & 전자기기 📱", words: ["스마트폰", "냉장고", "세탁기", "전자레인지", "청소기", "에어컨", "텔레비전", "노트북", "헤어드라이어", "게임기", "선풍기", "카메라", "태블릿", "공기청정기", "스피커", "스마트워치"] }
 ];
 
 function shuffleArray(arr) {
@@ -551,18 +314,8 @@ function playSound(freq, duration = 0.06, type = 'sine') {
 }
 
 function generateRandomNickname() {
-  const adjectives = [
-    '맛있는', '더러운', '귀여운', '용감한', '행복한', '화난', '빠른', '느긋한',
-    '배고픈', '졸린', '똑똑한', '신나는', '엉뚱한', '빛나는', '수상한', '멋진', '잘생긴',
-    '조용한', '날렵한', '심심한', '달콤한', '신비한', '용맹한', '단단한', '반짝이는', '날씬한',
-    '재미있는', '슬픈', '행운의', '무서운', '따뜻한', '차가운', '못생긴', '흉악한', '극악무도한'
-  ];
-  const nouns = [
-    '사과', '돼지', '고양이', '강아지', '바나나', '호랑이', '토끼', '딸기', '귤',
-    '수박', '여우', '판다', '포도', '복숭아', '다람쥐', '망고', '너구리', '말레이곰',
-    '햄스터', '사자', '오렌지', '곰', '펭귄', '수달', '코알라', '체리', '멜론', '티라노',
-    '고래상어', '침팬치', '드래곤', '유니콘'
-  ];
+  const adjectives = ['맛있는', '더러운', '귀여운', '용감한', '행복한', '화난', '빠른', '느긋한', '배고픈', '졸린', '똑똑한', '신나는', '엉뚱한', '빛나는', '수상한', '멋진', '잘생긴', '조용한', '날렵한', '심심한', '달콤한', '신비한', '용맹한', '단단한', '반짝이는', '날씬한', '재미있는', '슬픈', '행운의', '무서운', '따뜻한', '차가운', '못생긴', '흉악한', '극악무도한'];
+  const nouns = ['사과', '돼지', '고양이', '강아지', '바나나', '호랑이', '토끼', '딸기', '귤', '수박', '여우', '판다', '포도', '복숭아', '다람쥐', '망고', '너구리', '말레이곰', '햄스터', '사자', '오렌지', '곰', '펭귄', '수달', '코알라', '체리', '멜론', '티라노', '고래상어', '침팬치', '드래곤', '유니콘'];
   const randomAdj = adjectives[Math.floor(Math.random() * adjectives.length)];
   const randomNoun = nouns[Math.floor(Math.random() * nouns.length)];
   const randomNum = Math.floor(1000 + Math.random() * 9000);
@@ -578,84 +331,25 @@ if (!myUserId) {
 const MQTT_BROKER = 'wss://broker.emqx.io:8084/mqtt';
 const MQTT_TOPIC = 'meongtime/liargame/rooms/v1';
 
-let peer = null;
-let connections = [];
-let hostConn = null;
-let isHost = false;
-let myId = '';
-let myNickname = '';
-let roomCode = '';
-let isRoomCodeRevealed = false;
-let isConnecting = false;
+let peer = null; let connections = []; let hostConn = null; let isHost = false; let myId = ''; let myNickname = ''; let roomCode = ''; let isRoomCodeRevealed = false; let isConnecting = false;
+let roomSettings = { isPublic: true, maxPlayers: 8, liarCount: 1, speakTime: 25, voteTime: 25, targetScore: 5, allowCustomNickname: true, bannedWords: [] };
+let players = {}; let currentTheme = null; let currentWords = []; let hostSecretWordIndex = null; let myTargetWordIndex = null; let myRole = 'CITIZEN';
+let isGameInProgress = false; let currentPhase = 'LOBBY'; let currentRoundClues = [];
+let turnOrder = []; let currentTurnIndex = 0; let phaseTimer = null; let timeLeft = 0;
+let votes = {}; let votedLiarIds = []; let mqttClient = null; let publicRoomsMap = {}; let broadcastInterval = null;
 
-let roomSettings = {
-  isPublic: true,
-  maxPlayers: 8,
-  liarCount: 1,
-  speakTime: 25,
-  voteTime: 25,
-  targetScore: 5,
-  allowCustomNickname: true,
-  bannedWords: []
-};
-
-let players = {};
-let currentTheme = null;
-let currentWords = [];
-let hostSecretWordIndex = null;
-let myTargetWordIndex = null;
-let myRole = 'CITIZEN';
-
-let isGameInProgress = false;
-let currentPhase = 'LOBBY';
-let currentRoundClues = [];
-
-let turnOrder = [];
-let currentTurnIndex = 0;
-let phaseTimer = null;
-let timeLeft = 0;
-
-let votes = {};
-let votedLiarIds = [];
-
-let mqttClient = null;
-let publicRoomsMap = {};
-let broadcastInterval = null;
-
-const views = {
-  menu: document.getElementById('viewMenu'),
-  lobby: document.getElementById('viewLobby'),
-  game: document.getElementById('viewGame'),
-  finalWin: document.getElementById('viewFinalWin'),
-};
-function showView(name) {
-  Object.keys(views).forEach(k => views[k].classList.remove('active'));
-  views[name].classList.add('active');
-}
+const views = { menu: document.getElementById('viewMenu'), lobby: document.getElementById('viewLobby'), game: document.getElementById('viewGame'), finalWin: document.getElementById('viewFinalWin') };
+function showView(name) { Object.keys(views).forEach(k => views[k].classList.remove('active')); views[name].classList.add('active'); }
 
 function syncLeaderboardToParent() {
   if (window.parent) {
     const formattedPlayers = {};
-    Object.values(players).forEach(p => {
-      formattedPlayers[p.userId] = {
-        nickname: p.nickname,
-        score: p.score,
-        online: p.online
-      };
-    });
-    window.parent.postMessage({
-      type: 'MEONGTIME_LEADERBOARD',
-      players: formattedPlayers,
-      myId: myUserId
-    }, '*');
+    Object.values(players).forEach(p => { formattedPlayers[p.userId] = { nickname: p.nickname, score: p.score, online: p.online }; });
+    window.parent.postMessage({ type: 'MEONGTIME_LEADERBOARD', players: formattedPlayers, myId: myUserId }, '*');
   }
 }
 
-window.addEventListener('message', (event) => {
-  if (event.data?.type === 'MEONGTIME_SET_THEME') {
-    document.body.classList.toggle('light', event.data.theme === 'light');
-  }
-});
+window.addEventListener('message', (event) => { if (event.data?.type === 'MEONGTIME_SET_THEME') { document.body.classList.toggle('light', event.data.theme === 'light'); } });
 
 function initMqtt() {
   try {
@@ -665,923 +359,338 @@ function initMqtt() {
       if (topic === MQTT_TOPIC) {
         try {
           const data = JSON.parse(message.toString());
-          if (data.deleted) {
-            delete publicRoomsMap[data.code];
-          } else if (data.isPublic) {
-            publicRoomsMap[data.code] = { ...data, lastSeen: Date.now() };
-          }
+          if (data.deleted) { delete publicRoomsMap[data.code]; } else if (data.isPublic) { publicRoomsMap[data.code] = { ...data, lastSeen: Date.now() }; }
           renderPublicRoomList();
         } catch (e) {}
       }
     });
   } catch (e) {}
-
   setInterval(() => {
-    const now = Date.now();
-    let changed = false;
-    Object.keys(publicRoomsMap).forEach(code => {
-      if (now - publicRoomsMap[code].lastSeen > 6500) {
-        delete publicRoomsMap[code];
-        changed = true;
-      }
-    });
+    const now = Date.now(); let changed = false;
+    Object.keys(publicRoomsMap).forEach(code => { if (now - publicRoomsMap[code].lastSeen > 6500) { delete publicRoomsMap[code]; changed = true; } });
     if (changed) renderPublicRoomList();
   }, 2000);
 }
 
 function startHostBroadcasting() {
   if (!roomSettings.isPublic) return;
-  const sendBeacon = (status = 'WAITING') => {
-    if (mqttClient && mqttClient.connected) {
-      mqttClient.publish(MQTT_TOPIC, JSON.stringify({
-        code: roomCode,
-        isPublic: true,
-        host: myNickname,
-        count: Object.values(players).filter(p => p.online).length,
-        max: roomSettings.maxPlayers,
-        status: status
-      }));
-    }
-  };
+  const sendBeacon = (status = 'WAITING') => { if (mqttClient && mqttClient.connected) { mqttClient.publish(MQTT_TOPIC, JSON.stringify({ code: roomCode, isPublic: true, host: myNickname, count: Object.values(players).filter(p => p.online).length, max: roomSettings.maxPlayers, status: status })); } };
   sendBeacon(isGameInProgress ? 'PLAYING' : 'WAITING');
-  if (!broadcastInterval) {
-    broadcastInterval = setInterval(() => sendBeacon(isGameInProgress ? 'PLAYING' : 'WAITING'), 3000);
-  }
+  if (!broadcastInterval) { broadcastInterval = setInterval(() => sendBeacon(isGameInProgress ? 'PLAYING' : 'WAITING'), 3000); }
 }
 
 function stopHostBroadcasting() {
-  if (broadcastInterval) {
-    clearInterval(broadcastInterval);
-    broadcastInterval = null;
-  }
-  if (mqttClient && mqttClient.connected && roomCode) {
-    mqttClient.publish(MQTT_TOPIC, JSON.stringify({ code: roomCode, deleted: true }));
-  }
+  if (broadcastInterval) { clearInterval(broadcastInterval); broadcastInterval = null; }
+  if (mqttClient && mqttClient.connected && roomCode) { mqttClient.publish(MQTT_TOPIC, JSON.stringify({ code: roomCode, deleted: true })); }
 }
 
 function renderPublicRoomList() {
-  const listEl = document.getElementById('publicRoomList');
-  const countEl = document.getElementById('publicRoomCount');
-  const rooms = Object.values(publicRoomsMap);
+  const listEl = document.getElementById('publicRoomList'); const countEl = document.getElementById('publicRoomCount'); const rooms = Object.values(publicRoomsMap);
   countEl.textContent = rooms.length;
-
-  if (rooms.length === 0) {
-    listEl.innerHTML = `<li style="text-align: center; font-size: 12px; color: var(--text-sub); padding: 18px 0;">현재 열려있는 공개 방이 없습니다.</li>`;
-    return;
-  }
-
+  if (rooms.length === 0) { listEl.innerHTML = `<li style="text-align: center; font-size: 12px; color: var(--text-sub); padding: 18px 0;">현재 열려있는 공개 방이 없습니다.</li>`; return; }
   listEl.innerHTML = '';
   rooms.forEach(r => {
-    const isFull = r.count >= r.max;
-    const isPlaying = r.status === 'PLAYING';
-    const li = document.createElement('li');
-    li.className = 'room-item-card';
-    li.innerHTML = `
-      <div>
-        <div style="font-size: 13px; font-weight: 800;">👑 ${r.host}님의 방</div>
-        <div style="font-size: 11px; color: var(--text-sub);">인원: ${r.count}/${r.max}명 · ${isPlaying ? '🔥 게임중 (재접속 가능)' : '대기중'}</div>
-      </div>
-      <button style="padding: 6px 12px; font-size: 12px;" onclick="joinRoomDirect('${r.code}')">
-        ${isPlaying ? '재입장' : isFull ? '마감' : '입장'}
-      </button>
-    `;
+    const isFull = r.count >= r.max; const isPlaying = r.status === 'PLAYING'; const li = document.createElement('li'); li.className = 'room-item-card';
+    li.innerHTML = `<div><div style="font-size: 13px; font-weight: 800;">👑 ${r.host}님의 방</div><div style="font-size: 11px; color: var(--text-sub);">인원: ${r.count}/${r.max}명 · ${isPlaying ? '🔥 게임중 (재접속 가능)' : '대기중'}</div></div><button style="padding: 6px 12px; font-size: 12px;" onclick="joinRoomDirect('${r.code}')">${isPlaying ? '재입장' : isFull ? '마감' : '입장'}</button>`;
     listEl.appendChild(li);
   });
 }
-window.joinRoomDirect = (code) => {
-  if (isConnecting) return;
-  connectToRoom(code, document.getElementById('nicknameInput').value.trim());
-};
+window.joinRoomDirect = (code) => { if (isConnecting) return; connectToRoom(code, document.getElementById('nicknameInput').value.trim()); };
 
 const modalEl = document.getElementById('createRoomModal');
 document.getElementById('btnOpenCreateModal').addEventListener('click', () => modalEl.classList.add('active'));
 document.getElementById('btnCancelModal').addEventListener('click', () => modalEl.classList.remove('active'));
 
 document.getElementById('btnConfirmCreateRoom').addEventListener('click', () => {
-  if (isConnecting) return;
-  isConnecting = true;
-  modalEl.classList.remove('active');
+  if (isConnecting) return; isConnecting = true; modalEl.classList.remove('active');
   const inputVal = document.getElementById('nicknameInput').value.trim();
-
-  roomSettings = {
-    isPublic: document.getElementById('modalIsPublic').value === 'true',
-    maxPlayers: parseInt(document.getElementById('modalMaxPlayers').value, 10),
-    liarCount: parseInt(document.getElementById('modalLiarCount').value, 10),
-    speakTime: parseInt(document.getElementById('modalSpeakTime').value, 10),
-    voteTime: parseInt(document.getElementById('modalVoteTime').value, 10),
-    targetScore: parseInt(document.getElementById('modalTargetScore').value, 10),
-    allowCustomNickname: document.getElementById('modalAllowCustomNick').checked,
-    bannedWords: document.getElementById('modalBannedWords').value.split(',').map(s=>s.trim()).filter(Boolean)
-  };
-
+  roomSettings = { isPublic: document.getElementById('modalIsPublic').value === 'true', maxPlayers: parseInt(document.getElementById('modalMaxPlayers').value, 10), liarCount: parseInt(document.getElementById('modalLiarCount').value, 10), speakTime: parseInt(document.getElementById('modalSpeakTime').value, 10), voteTime: parseInt(document.getElementById('modalVoteTime').value, 10), targetScore: parseInt(document.getElementById('modalTargetScore').value, 10), allowCustomNickname: document.getElementById('modalAllowCustomNick').checked, bannedWords: document.getElementById('modalBannedWords').value.split(',').map(s=>s.trim()).filter(Boolean) };
   myNickname = (!roomSettings.allowCustomNickname || !inputVal) ? generateRandomNickname() : inputVal;
-  isHost = true;
-  roomCode = Math.random().toString(36).substring(2, 6).toUpperCase();
-  isGameInProgress = false;
-  currentPhase = 'LOBBY';
-
+  isHost = true; roomCode = Math.random().toString(36).substring(2, 6).toUpperCase(); isGameInProgress = false; currentPhase = 'LOBBY';
   peer = new Peer(`meongtime-liar-${roomCode}`);
-  peer.on('open', (id) => {
-    isConnecting = false;
-    myId = id;
-    players = {};
-    players[myUserId] = {
-      userId: myUserId,
-      peerId: myId,
-      nickname: myNickname,
-      score: 0,
-      isLiar: false,
-      online: true
-    };
-    setupLobbyUI();
-    syncLeaderboardToParent();
-    startHostBroadcasting();
-  });
-
-  peer.on('connection', (conn) => {
-    connections.push(conn);
-    conn.on('data', (data) => handleHostReceiveData(conn, data));
-    conn.on('close', () => {
-      handleHostPeerDisconnect(conn.peer);
-    });
-  });
-
-  peer.on('error', () => {
-    isConnecting = false;
-    alert('방 생성에 실패했습니다. 다시 시도해주세요.');
-  });
+  peer.on('open', (id) => { isConnecting = false; myId = id; players = {}; players[myUserId] = { userId: myUserId, peerId: myId, nickname: myNickname, score: 0, isLiar: false, online: true }; setupLobbyUI(); syncLeaderboardToParent(); startHostBroadcasting(); });
+  peer.on('connection', (conn) => { connections.push(conn); conn.on('data', (data) => handleHostReceiveData(conn, data)); conn.on('close', () => { handleHostPeerDisconnect(conn.peer); }); });
+  peer.on('error', () => { isConnecting = false; alert('방 생성에 실패했습니다. 다시 시도해주세요.'); });
 });
 
 document.getElementById('btnJoinRoom').addEventListener('click', () => {
-  if (isConnecting) return;
-  const code = document.getElementById('joinCodeInput').value.trim().toUpperCase();
-  if (code.length !== 4) return alert('4자리 방 코드를 입력하세요.');
-  connectToRoom(code, document.getElementById('nicknameInput').value.trim());
+  if (isConnecting) return; const code = document.getElementById('joinCodeInput').value.trim().toUpperCase();
+  if (code.length !== 4) return alert('4자리 방 코드를 입력하세요.'); connectToRoom(code, document.getElementById('nicknameInput').value.trim());
 });
 
 function connectToRoom(code, customNick) {
-  isConnecting = true;
-  myNickname = customNick;
-  isHost = false;
-  roomCode = code;
-
-  if (peer) peer.destroy();
-
-  peer = new Peer();
+  isConnecting = true; myNickname = customNick; isHost = false; roomCode = code;
+  if (peer) peer.destroy(); peer = new Peer();
   peer.on('open', (id) => {
-    myId = id;
-    hostConn = peer.connect(`meongtime-liar-${roomCode}`, { reliable: true });
-    hostConn.on('open', () => {
-      isConnecting = false;
-      hostConn.send({ type: 'JOIN', userId: myUserId, nickname: myNickname });
-    });
+    myId = id; hostConn = peer.connect(`meongtime-liar-${roomCode}`, { reliable: true });
+    hostConn.on('open', () => { isConnecting = false; hostConn.send({ type: 'JOIN', userId: myUserId, nickname: myNickname }); });
     hostConn.on('data', (data) => handleGuestReceiveData(data));
-    hostConn.on('error', () => {
-      isConnecting = false;
-      alert('방에 연결할 수 없습니다.');
-    });
+    hostConn.on('error', () => { isConnecting = false; alert('방에 연결할 수 없습니다.'); });
   });
-
-  peer.on('error', () => {
-    isConnecting = false;
-    alert('방을 찾을 수 없거나 네트워크 오류가 발생했습니다.');
-  });
+  peer.on('error', () => { isConnecting = false; alert('방을 찾을 수 없거나 네트워크 오류가 발생했습니다.'); });
 }
 
 function handleHostPeerDisconnect(peerId) {
-  const user = Object.values(players).find(p => p.peerId === peerId);
-  connections = connections.filter(c => c.peer !== peerId);
+  const user = Object.values(players).find(p => p.peerId === peerId); connections = connections.filter(c => c.peer !== peerId);
+  if (user) { if (isGameInProgress) { user.online = false; } else { delete players[user.userId]; } broadcast({ type: 'PLAYER_LIST', players }); renderLobbyList(); syncLeaderboardToParent(); }
+}
 
-  if (user) {
-    if (isGameInProgress) {
-      user.online = false;
-    } else {
-      delete players[user.userId];
-    }
-    broadcast({ type: 'PLAYER_LIST', players });
-    renderLobbyList();
-    syncLeaderboardToParent();
+/* ==========================================================
+   💡 방 코드 클릭/복사 분리 로직 (Liar Game)
+   ========================================================== */
+window.toggleRoomCode = function(e) {
+  if (e) e.stopPropagation();
+  isRoomCodeRevealed = !isRoomCodeRevealed;
+  renderRoomCodeBadge();
+};
+
+window.copyRoomCode = function(e) {
+  if (e) e.stopPropagation();
+  navigator.clipboard.writeText(roomCode);
+  alert(`방 코드 [${roomCode}]가 복사되었습니다!`);
+};
+
+function renderRoomCodeBadge() {
+  const badge = document.getElementById('roomCodeDisplay');
+  const hintEl = document.getElementById('roomCodeHint');
+
+  if (!isRoomCodeRevealed) {
+    badge.innerHTML = `
+      <div class="room-code-text" onclick="toggleRoomCode(event)">
+        <span>🔒</span><span>• • • •</span>
+      </div>
+    `;
+    if (hintEl) hintEl.textContent = '클릭하여 방 코드 공개';
+  } else {
+    badge.innerHTML = `
+      <div class="room-code-text" onclick="toggleRoomCode(event)">
+        <span>🔓</span><span>${roomCode}</span>
+      </div>
+      <button class="btn-copy-code" onclick="copyRoomCode(event)">복사</button>
+    `;
+    if (hintEl) hintEl.textContent = '우측 버튼을 눌러 복사 (코드 클릭 시 숨김)';
   }
 }
 
 function setupLobbyUI() {
-  showView('lobby');
-  isRoomCodeRevealed = false;
-  renderRoomCodeBadge();
-
-  document.getElementById('infoMaxPlayers').textContent = roomSettings.maxPlayers;
-  document.getElementById('maxCountDisplay').textContent = roomSettings.maxPlayers;
-  document.getElementById('infoLiarCount').textContent = roomSettings.liarCount;
-  document.getElementById('infoTargetScore').textContent = roomSettings.targetScore;
-
-  const btnStart = document.getElementById('btnStartGame');
-  const txtWaiting = document.getElementById('waitingHostText');
-  if (isHost) {
-    btnStart.style.display = 'block';
-    txtWaiting.style.display = 'none';
-  } else {
-    btnStart.style.display = 'none';
-    txtWaiting.style.display = 'block';
-  }
+  showView('lobby'); isRoomCodeRevealed = false; renderRoomCodeBadge();
+  document.getElementById('infoMaxPlayers').textContent = roomSettings.maxPlayers; document.getElementById('maxCountDisplay').textContent = roomSettings.maxPlayers; document.getElementById('infoLiarCount').textContent = roomSettings.liarCount; document.getElementById('infoTargetScore').textContent = roomSettings.targetScore;
+  const btnStart = document.getElementById('btnStartGame'); const txtWaiting = document.getElementById('waitingHostText');
+  if (isHost) { btnStart.style.display = 'block'; txtWaiting.style.display = 'none'; } else { btnStart.style.display = 'none'; txtWaiting.style.display = 'block'; }
   renderLobbyList();
 }
 
-function renderRoomCodeBadge() {
-  const badge = document.getElementById('roomCodeDisplay');
-  badge.innerHTML = isRoomCodeRevealed ? `<span>🔓</span><span>${roomCode}</span>` : `<span>🔒</span><span>• • • •</span>`;
-  badge.onclick = () => {
-    isRoomCodeRevealed = !isRoomCodeRevealed;
-    renderRoomCodeBadge();
-    if (isRoomCodeRevealed) {
-      navigator.clipboard.writeText(roomCode);
-      alert(`방 코드 [${roomCode}]가 복사되었습니다!`);
-    }
-  };
-}
-
 function renderLobbyList() {
-  const listEl = document.getElementById('playerList');
-  listEl.innerHTML = '';
-  const activePlayers = Object.values(players).filter(p => p.online);
-  document.getElementById('playerCount').textContent = activePlayers.length;
-
+  const listEl = document.getElementById('playerList'); listEl.innerHTML = ''; const activePlayers = Object.values(players).filter(p => p.online); document.getElementById('playerCount').textContent = activePlayers.length;
   activePlayers.forEach((p) => {
-    const isMe = p.userId === myUserId;
-    const li = document.createElement('li');
-    li.className = 'player-item';
-
+    const isMe = p.userId === myUserId; const li = document.createElement('li'); li.className = 'player-item';
     let rightHtml = `<span style="color:var(--accent);">대기 중 (${p.score}점)</span>`;
-    if (isHost && !isMe) {
-      rightHtml = `<div style="display:flex; gap:6px; align-items:center;"><span>${p.score}점</span><button class="btn-kick" onclick="kickUser('${p.userId}')">강퇴</button></div>`;
-    }
-    li.innerHTML = `<span>${p.nickname} ${isMe ? '(나)' : ''}</span>${rightHtml}`;
-    listEl.appendChild(li);
+    if (isHost && !isMe) { rightHtml = `<div style="display:flex; gap:6px; align-items:center;"><span>${p.score}점</span><button class="btn-kick" onclick="kickUser('${p.userId}')">강퇴</button></div>`; }
+    li.innerHTML = `<span>${p.nickname} ${isMe ? '(나)' : ''}</span>${rightHtml}`; listEl.appendChild(li);
   });
 }
 
 function kickUser(userId) {
-  if (!isHost || userId === myUserId) return;
-  const user = players[userId];
-  if (!user) return;
-
-  const conn = connections.find(c => c.peer === user.peerId);
-  if (conn) {
-    conn.send({ type: 'KICK' });
-    setTimeout(() => conn.close(), 100);
-  }
-  delete players[userId];
-  broadcast({ type: 'PLAYER_LIST', players });
-  renderLobbyList();
-  syncLeaderboardToParent();
+  if (!isHost || userId === myUserId) return; const user = players[userId]; if (!user) return;
+  const conn = connections.find(c => c.peer === user.peerId); if (conn) { conn.send({ type: 'KICK' }); setTimeout(() => conn.close(), 100); }
+  delete players[userId]; broadcast({ type: 'PLAYER_LIST', players }); renderLobbyList(); syncLeaderboardToParent();
 }
 
 function handleHostReceiveData(conn, data) {
   if (data.type === 'JOIN') {
-    const joiningUid = data.userId;
-    let nick = (data.nickname || '').trim();
-
+    const joiningUid = data.userId; let nick = (data.nickname || '').trim();
     if (players[joiningUid]) {
-      const existingUser = players[joiningUid];
-      existingUser.peerId = conn.peer;
-      existingUser.online = true;
-
-      if (isGameInProgress) {
-        conn.send({
-          type: 'RECONNECT_SUCCESS',
-          nick: existingUser.nickname,
-          settings: roomSettings,
-          gameState: {
-            theme: currentTheme,
-            words: currentWords,
-            targetIndex: existingUser.isLiar ? null : hostSecretWordIndex,
-            isLiar: existingUser.isLiar,
-            turnOrder: turnOrder,
-            currentTurnIndex: currentTurnIndex,
-            currentSpeakerId: turnOrder[currentTurnIndex],
-            currentPhase: currentPhase,
-            timeLeft: timeLeft,
-            clueLogs: currentRoundClues,
-            players: players
-          }
-        });
-      } else {
-        conn.send({ type: 'JOIN_SUCCESS', nick: existingUser.nickname, settings: roomSettings });
-      }
-
-      broadcast({ type: 'PLAYER_LIST', players });
-      renderLobbyList();
-      syncLeaderboardToParent();
-      return;
+      const existingUser = players[joiningUid]; existingUser.peerId = conn.peer; existingUser.online = true;
+      if (isGameInProgress) { conn.send({ type: 'RECONNECT_SUCCESS', nick: existingUser.nickname, settings: roomSettings, gameState: { theme: currentTheme, words: currentWords, targetIndex: existingUser.isLiar ? null : hostSecretWordIndex, isLiar: existingUser.isLiar, turnOrder: turnOrder, currentTurnIndex: currentTurnIndex, currentSpeakerId: turnOrder[currentTurnIndex], currentPhase: currentPhase, timeLeft: timeLeft, clueLogs: currentRoundClues, players: players } }); } else { conn.send({ type: 'JOIN_SUCCESS', nick: existingUser.nickname, settings: roomSettings }); }
+      broadcast({ type: 'PLAYER_LIST', players }); renderLobbyList(); syncLeaderboardToParent(); return;
     }
-
-    if (isGameInProgress) {
-      conn.send({ type: 'REJECT', msg: '게임이 이미 진행 중인 방입니다. 진행 중에는 재접속만 가능합니다.' });
-      setTimeout(() => conn.close(), 200);
-      return;
-    }
-
-    const currentOnlineCount = Object.values(players).filter(p => p.online).length;
-    if (currentOnlineCount >= roomSettings.maxPlayers) {
-      conn.send({ type: 'REJECT', msg: '방 인원이 꽉 찼습니다.' });
-      setTimeout(() => conn.close(), 200);
-      return;
-    }
-
+    if (isGameInProgress) { conn.send({ type: 'REJECT', msg: '게임이 이미 진행 중인 방입니다. 진행 중에는 재접속만 가능합니다.' }); setTimeout(() => conn.close(), 200); return; }
+    if (Object.values(players).filter(p => p.online).length >= roomSettings.maxPlayers) { conn.send({ type: 'REJECT', msg: '방 인원이 꽉 찼습니다.' }); setTimeout(() => conn.close(), 200); return; }
     if (!roomSettings.allowCustomNickname || !nick) nick = generateRandomNickname();
-    if (roomSettings.bannedWords.some(w => nick.includes(w))) {
-      conn.send({ type: 'REJECT', msg: '닉네임에 금칙어가 포함되어 있습니다.' });
-      setTimeout(() => conn.close(), 200);
-      return;
-    }
-
-    players[joiningUid] = {
-      userId: joiningUid,
-      peerId: conn.peer,
-      nickname: nick,
-      score: 0,
-      isLiar: false,
-      online: true
-    };
-
-    conn.send({ type: 'JOIN_SUCCESS', nick, settings: roomSettings });
-    broadcast({ type: 'PLAYER_LIST', players });
-    renderLobbyList();
-    syncLeaderboardToParent();
-  } else if (data.type === 'CLUE') {
-    broadcastClue(data.userId, data.text);
-  } else if (data.type === 'VOTE') {
-    votes[data.userId] = data.targetUserId;
-    const activeVoters = Object.values(players).filter(p => p.online).length;
-    if (Object.keys(votes).length >= activeVoters) {
-      finishVotingPhase();
-    }
-  } else if (data.type === 'LIAR_GUESS') {
-    handleLiarGuessResult(data.userId, data.guessIndex);
-  }
+    if (roomSettings.bannedWords.some(w => nick.includes(w))) { conn.send({ type: 'REJECT', msg: '닉네임에 금칙어가 포함되어 있습니다.' }); setTimeout(() => conn.close(), 200); return; }
+    players[joiningUid] = { userId: joiningUid, peerId: conn.peer, nickname: nick, score: 0, isLiar: false, online: true };
+    conn.send({ type: 'JOIN_SUCCESS', nick, settings: roomSettings }); broadcast({ type: 'PLAYER_LIST', players }); renderLobbyList(); syncLeaderboardToParent();
+  } else if (data.type === 'CLUE') { broadcastClue(data.userId, data.text);
+  } else if (data.type === 'VOTE') { votes[data.userId] = data.targetUserId; if (Object.keys(votes).length >= Object.values(players).filter(p => p.online).length) finishVotingPhase();
+  } else if (data.type === 'LIAR_GUESS') { handleLiarGuessResult(data.userId, data.guessIndex); }
 }
 
 function handleGuestReceiveData(data) {
-  if (data.type === 'JOIN_SUCCESS') {
-    myNickname = data.nick;
-    roomSettings = data.settings;
-    setupLobbyUI();
-  } else if (data.type === 'RECONNECT_SUCCESS') {
-    myNickname = data.nick;
-    roomSettings = data.settings;
-    restoreGameStateUI(data.gameState);
-  } else if (data.type === 'REJECT') {
-    alert(data.msg);
-    showView('menu');
-  } else if (data.type === 'KICK') {
-    alert('방장에 의해 강퇴되었습니다.');
-    showView('menu');
-  } else if (data.type === 'PLAYER_LIST') {
-    players = data.players;
-    renderLobbyList();
-    syncLeaderboardToParent();
-  } else if (data.type === 'ROUND_START') {
-    startRoundUI(data);
-  } else if (data.type === 'TURN_CHANGE') {
-    handleTurnChange(data);
-  } else if (data.type === 'CLUE_BROADCAST') {
-    appendClueLog(data.speakerNick, data.text);
-  } else if (data.type === 'VOTE_PHASE_START') {
-    startVotePhaseUI(data.time);
-  } else if (data.type === 'LIAR_GUESS_PROMPT') {
-    promptLiarGuessUI();
-  } else if (data.type === 'ROUND_RESULT') {
-    showRoundResultUI(data);
-  } else if (data.type === 'FINAL_GAME_OVER') {
-    showFinalWinUI(data);
-  }
+  if (data.type === 'JOIN_SUCCESS') { myNickname = data.nick; roomSettings = data.settings; setupLobbyUI();
+  } else if (data.type === 'RECONNECT_SUCCESS') { myNickname = data.nick; roomSettings = data.settings; restoreGameStateUI(data.gameState);
+  } else if (data.type === 'REJECT') { alert(data.msg); showView('menu');
+  } else if (data.type === 'KICK') { alert('방장에 의해 강퇴되었습니다.'); showView('menu');
+  } else if (data.type === 'PLAYER_LIST') { players = data.players; renderLobbyList(); syncLeaderboardToParent();
+  } else if (data.type === 'ROUND_START') { startRoundUI(data);
+  } else if (data.type === 'TURN_CHANGE') { handleTurnChange(data);
+  } else if (data.type === 'CLUE_BROADCAST') { appendClueLog(data.speakerNick, data.text);
+  } else if (data.type === 'VOTE_PHASE_START') { startVotePhaseUI(data.time);
+  } else if (data.type === 'LIAR_GUESS_PROMPT') { promptLiarGuessUI();
+  } else if (data.type === 'ROUND_RESULT') { showRoundResultUI(data);
+  } else if (data.type === 'FINAL_GAME_OVER') { showFinalWinUI(data); }
 }
 
-function broadcast(data) {
-  connections.forEach(c => c.send(data));
-}
+function broadcast(data) { connections.forEach(c => c.send(data)); }
 
 document.getElementById('btnStartGame').addEventListener('click', () => {
-  const activeCount = Object.values(players).filter(p => p.online).length;
-  if (activeCount < 3) {
-    return alert('게임을 시작하려면 최소 3명의 플레이어가 필요합니다!');
-  }
+  if (Object.values(players).filter(p => p.online).length < 3) return alert('게임을 시작하려면 최소 3명의 플레이어가 필요합니다!');
   startNewRound();
 });
 
 function startNewRound() {
-  isGameInProgress = true;
-  currentPhase = 'CLUE';
-  currentRoundClues = [];
-  document.getElementById('roundResultModal').classList.remove('active');
-
-  const selectedThemeObj = WORD_DATABASE[Math.floor(Math.random() * WORD_DATABASE.length)];
-  currentTheme = selectedThemeObj.theme;
-  currentWords = shuffleArray(selectedThemeObj.words);
-  hostSecretWordIndex = Math.floor(Math.random() * 16);
-
-  const activeUserIds = Object.keys(players).filter(uid => players[uid].online);
-  activeUserIds.forEach(uid => players[uid].isLiar = false);
-
-  const shuffledForLiar = shuffleArray(activeUserIds);
-  const actualLiarCount = Math.max(1, Math.min(roomSettings.liarCount, activeUserIds.length - 2));
-  for (let i = 0; i < actualLiarCount; i++) {
-    players[shuffledForLiar[i]].isLiar = true;
-  }
-
-  turnOrder = shuffleArray(activeUserIds);
-  currentTurnIndex = 0;
-  votes = {};
-
+  isGameInProgress = true; currentPhase = 'CLUE'; currentRoundClues = []; document.getElementById('roundResultModal').classList.remove('active');
+  const selectedThemeObj = WORD_DATABASE[Math.floor(Math.random() * WORD_DATABASE.length)]; currentTheme = selectedThemeObj.theme; currentWords = shuffleArray(selectedThemeObj.words); hostSecretWordIndex = Math.floor(Math.random() * 16);
+  const activeUserIds = Object.keys(players).filter(uid => players[uid].online); activeUserIds.forEach(uid => players[uid].isLiar = false);
+  const shuffledForLiar = shuffleArray(activeUserIds); const actualLiarCount = Math.max(1, Math.min(roomSettings.liarCount, activeUserIds.length - 2));
+  for (let i = 0; i < actualLiarCount; i++) players[shuffledForLiar[i]].isLiar = true;
+  turnOrder = shuffleArray(activeUserIds); currentTurnIndex = 0; votes = {};
   activeUserIds.forEach(uid => {
-    const isPlayerLiar = players[uid].isLiar;
-    const packet = {
-      type: 'ROUND_START',
-      theme: currentTheme,
-      words: currentWords,
-      targetIndex: isPlayerLiar ? null : hostSecretWordIndex,
-      isLiar: isPlayerLiar,
-      turnOrder: turnOrder,
-      players: players
-    };
-
-    if (uid === myUserId) {
-      startRoundUI(packet);
-    } else {
-      const conn = connections.find(c => c.peer === players[uid].peerId);
-      if (conn) conn.send(packet);
-    }
+    const isPlayerLiar = players[uid].isLiar; const packet = { type: 'ROUND_START', theme: currentTheme, words: currentWords, targetIndex: isPlayerLiar ? null : hostSecretWordIndex, isLiar: isPlayerLiar, turnOrder: turnOrder, players: players };
+    if (uid === myUserId) startRoundUI(packet); else { const conn = connections.find(c => c.peer === players[uid].peerId); if (conn) conn.send(packet); }
   });
-
-  setTimeout(() => {
-    startSpeakerTurn(0);
-  }, 1200);
+  setTimeout(() => startSpeakerTurn(0), 1200);
 }
 
 function startRoundUI(data) {
-  showView('game');
-  document.getElementById('roundResultModal').classList.remove('active');
-  document.getElementById('currentThemeName').textContent = data.theme;
-  document.getElementById('clueLog').innerHTML = '';
-  document.getElementById('voteGrid').style.display = 'none';
-
-  myRole = data.isLiar ? 'LIAR' : 'CITIZEN';
-  myTargetWordIndex = (typeof data.targetIndex === 'number') ? data.targetIndex : null;
-  currentWords = data.words;
-  turnOrder = data.turnOrder || [];
-  players = data.players || players;
-
+  showView('game'); document.getElementById('roundResultModal').classList.remove('active'); document.getElementById('currentThemeName').textContent = data.theme; document.getElementById('clueLog').innerHTML = ''; document.getElementById('voteGrid').style.display = 'none';
+  myRole = data.isLiar ? 'LIAR' : 'CITIZEN'; myTargetWordIndex = (typeof data.targetIndex === 'number') ? data.targetIndex : null; currentWords = data.words; turnOrder = data.turnOrder || []; players = data.players || players;
   const hintEl = document.getElementById('myRoleHint');
-  if (myRole === 'LIAR') {
-    hintEl.innerHTML = `<span style="color:#facc15; font-weight:900;">🤫 당신은 라이어입니다! 단어를 유추하세요.</span>`;
-  } else {
-    hintEl.innerHTML = `<span style="color:#ef4444; font-weight:900;">🔴 빨간색 표시된 단어가 정답입니다.</span>`;
-  }
-
-  renderWordGrid(false);
-  renderTurnChips(-1);
-  playSound(520, 0.15);
+  if (myRole === 'LIAR') { hintEl.innerHTML = `<span style="color:#facc15; font-weight:900;">🤫 당신은 라이어입니다! 단어를 유추하세요.</span>`; } else { hintEl.innerHTML = `<span style="color:#ef4444; font-weight:900;">🔴 빨간색 표시된 단어가 정답입니다.</span>`; }
+  renderWordGrid(false); renderTurnChips(-1); playSound(520, 0.15);
 }
 
 function renderTurnChips(activeIdx) {
-  const chipsEl = document.getElementById('turnOrderChips');
-  chipsEl.innerHTML = '';
-
+  const chipsEl = document.getElementById('turnOrderChips'); chipsEl.innerHTML = '';
   turnOrder.forEach((uid, idx) => {
-    const p = players[uid];
-    if (!p) return;
-    const chip = document.createElement('div');
-    chip.className = `turn-chip ${idx === activeIdx ? 'active' : idx < activeIdx ? 'done' : ''}`;
-    chip.textContent = `${idx + 1}. ${p.nickname} ${uid === myUserId ? '(나)' : ''}`;
-    chipsEl.appendChild(chip);
+    const p = players[uid]; if (!p) return; const chip = document.createElement('div'); chip.className = `turn-chip ${idx === activeIdx ? 'active' : idx < activeIdx ? 'done' : ''}`; chip.textContent = `${idx + 1}. ${p.nickname} ${uid === myUserId ? '(나)' : ''}`; chipsEl.appendChild(chip);
   });
 }
 
 function restoreGameStateUI(state) {
-  showView('game');
-  document.getElementById('roundResultModal').classList.remove('active');
-  document.getElementById('currentThemeName').textContent = state.theme;
-  currentWords = state.words;
-  myRole = state.isLiar ? 'LIAR' : 'CITIZEN';
-  myTargetWordIndex = state.targetIndex;
-  players = state.players;
-  turnOrder = state.turnOrder;
-  currentTurnIndex = state.currentTurnIndex;
-
+  showView('game'); document.getElementById('roundResultModal').classList.remove('active'); document.getElementById('currentThemeName').textContent = state.theme; currentWords = state.words; myRole = state.isLiar ? 'LIAR' : 'CITIZEN'; myTargetWordIndex = state.targetIndex; players = state.players; turnOrder = state.turnOrder; currentTurnIndex = state.currentTurnIndex;
   const hintEl = document.getElementById('myRoleHint');
-  if (myRole === 'LIAR') {
-    hintEl.innerHTML = `<span style="color:#facc15; font-weight:900;">🤫 당신은 라이어입니다! 단어를 유추하세요.</span>`;
-  } else {
-    hintEl.innerHTML = `<span style="color:#ef4444; font-weight:900;">🔴 빨간색 표시된 단어가 정답입니다.</span>`;
-  }
-
+  if (myRole === 'LIAR') { hintEl.innerHTML = `<span style="color:#facc15; font-weight:900;">🤫 당신은 라이어입니다! 단어를 유추하세요.</span>`; } else { hintEl.innerHTML = `<span style="color:#ef4444; font-weight:900;">🔴 빨간색 표시된 단어가 정답입니다.</span>`; }
   renderWordGrid(state.currentPhase === 'LIAR_GUESS');
-
-  const logEl = document.getElementById('clueLog');
-  logEl.innerHTML = '';
-  if (state.clueLogs) {
-    state.clueLogs.forEach(log => {
-      appendClueLog(log.speakerNick, log.text);
-    });
-  }
-
-  if (state.currentPhase === 'CLUE') {
-    handleTurnChange({
-      turnIndex: state.currentTurnIndex,
-      speakerId: state.currentSpeakerId,
-      speakerNick: players[state.currentSpeakerId]?.nickname || '익명',
-      speakTime: state.timeLeft,
-      turnOrder: state.turnOrder
-    });
-  } else if (state.currentPhase === 'VOTE') {
-    startVotePhaseUI(state.timeLeft);
-  } else if (state.currentPhase === 'LIAR_GUESS' && myRole === 'LIAR') {
-    promptLiarGuessUI();
-  }
-
+  const logEl = document.getElementById('clueLog'); logEl.innerHTML = ''; if (state.clueLogs) { state.clueLogs.forEach(log => appendClueLog(log.speakerNick, log.text)); }
+  if (state.currentPhase === 'CLUE') { handleTurnChange({ turnIndex: state.currentTurnIndex, speakerId: state.currentSpeakerId, speakerNick: players[state.currentSpeakerId]?.nickname || '익명', speakTime: state.timeLeft, turnOrder: state.turnOrder }); } else if (state.currentPhase === 'VOTE') { startVotePhaseUI(state.timeLeft); } else if (state.currentPhase === 'LIAR_GUESS' && myRole === 'LIAR') { promptLiarGuessUI(); }
   syncLeaderboardToParent();
 }
 
 function renderWordGrid(isGuessPhase = false) {
-  const grid = document.getElementById('wordGrid');
-  grid.innerHTML = '';
-
+  const grid = document.getElementById('wordGrid'); grid.innerHTML = '';
   currentWords.forEach((word, idx) => {
-    const tile = document.createElement('div');
-    tile.className = 'word-tile';
-
-    if (myRole === 'CITIZEN' && myTargetWordIndex !== null && idx === myTargetWordIndex) {
-      tile.classList.add('target-citizen');
-      tile.innerHTML = `
-        <div style="display:flex; flex-direction:column; align-items:center; gap:2px;">
-          <span style="font-size:10px; background:rgba(255,255,255,0.95); color:#dc2626; padding:1px 6px; border-radius:4px; font-weight:900;">제시어</span>
-          <span style="font-weight:900; font-size:15px;">${word}</span>
-        </div>
-      `;
-    } else {
-      tile.textContent = word;
-    }
-
-    if (isGuessPhase && myRole === 'LIAR') {
-      tile.classList.add('guessable');
-      tile.onclick = () => submitLiarGuess(idx);
-    }
-
-    grid.appendChild(tile);
+    const tile = document.createElement('div'); tile.className = 'word-tile';
+    if (myRole === 'CITIZEN' && myTargetWordIndex !== null && idx === myTargetWordIndex) { tile.classList.add('target-citizen'); tile.innerHTML = `<div style="display:flex; flex-direction:column; align-items:center; gap:2px;"><span style="font-size:10px; background:rgba(255,255,255,0.95); color:#dc2626; padding:1px 6px; border-radius:4px; font-weight:900;">제시어</span><span style="font-weight:900; font-size:15px;">${word}</span></div>`; } else { tile.textContent = word; }
+    if (isGuessPhase && myRole === 'LIAR') { tile.classList.add('guessable'); tile.onclick = () => submitLiarGuess(idx); } grid.appendChild(tile);
   });
 }
 
 function startSpeakerTurn(turnIdx) {
-  if (turnIdx >= turnOrder.length) {
-    startVotingPhase();
-    return;
-  }
-
-  currentTurnIndex = turnIdx;
-  const currentSpeakerUid = turnOrder[turnIdx];
-
-  if (!players[currentSpeakerUid] || !players[currentSpeakerUid].online) {
-    startSpeakerTurn(turnIdx + 1);
-    return;
-  }
-
-  currentPhase = 'CLUE';
-  const packet = {
-    type: 'TURN_CHANGE',
-    turnIndex: turnIdx,
-    speakerId: currentSpeakerUid,
-    speakerNick: players[currentSpeakerUid].nickname,
-    speakTime: roomSettings.speakTime,
-    turnOrder: turnOrder
-  };
-
-  broadcast(packet);
-  handleTurnChange(packet);
-
-  clearInterval(phaseTimer);
-  timeLeft = roomSettings.speakTime;
-  phaseTimer = setInterval(() => {
-    timeLeft--;
-    document.getElementById('phaseTimer').textContent = `${timeLeft}s`;
-    if (timeLeft <= 0) {
-      clearInterval(phaseTimer);
-      if (isHost) startSpeakerTurn(currentTurnIndex + 1);
-    }
-  }, 1000);
+  if (turnIdx >= turnOrder.length) { startVotingPhase(); return; }
+  currentTurnIndex = turnIdx; const currentSpeakerUid = turnOrder[turnIdx];
+  if (!players[currentSpeakerUid] || !players[currentSpeakerUid].online) { startSpeakerTurn(turnIdx + 1); return; }
+  currentPhase = 'CLUE'; const packet = { type: 'TURN_CHANGE', turnIndex: turnIdx, speakerId: currentSpeakerUid, speakerNick: players[currentSpeakerUid].nickname, speakTime: roomSettings.speakTime, turnOrder: turnOrder };
+  broadcast(packet); handleTurnChange(packet);
+  clearInterval(phaseTimer); timeLeft = roomSettings.speakTime; phaseTimer = setInterval(() => { timeLeft--; document.getElementById('phaseTimer').textContent = `${timeLeft}s`; if (timeLeft <= 0) { clearInterval(phaseTimer); if (isHost) startSpeakerTurn(currentTurnIndex + 1); } }, 1000);
 }
 
 function handleTurnChange(data) {
-  if (data.turnOrder) turnOrder = data.turnOrder;
-  currentTurnIndex = data.turnIndex;
-
-  document.getElementById('currentPhaseText').textContent = `발언 페이즈 (${data.turnIndex + 1}/${turnOrder.length})`;
-  document.getElementById('currentSpeakerLabel').textContent = `🎙️ 발언 차례: ${data.speakerNick}`;
-  document.getElementById('phaseTimer').textContent = `${data.speakTime}s`;
-
+  if (data.turnOrder) turnOrder = data.turnOrder; currentTurnIndex = data.turnIndex;
+  document.getElementById('currentPhaseText').textContent = `발언 페이즈 (${data.turnIndex + 1}/${turnOrder.length})`; document.getElementById('currentSpeakerLabel').textContent = `🎙️ 발언 차례: ${data.speakerNick}`; document.getElementById('phaseTimer').textContent = `${data.speakTime}s`;
   renderTurnChips(data.turnIndex);
-
-  const isMyTurn = data.speakerId === myUserId;
-  const inputEl = document.getElementById('clueInput');
-  const btnSend = document.getElementById('btnSendClue');
-
-  inputEl.disabled = !isMyTurn;
-  btnSend.disabled = !isMyTurn;
-
-  if (isMyTurn) {
-    inputEl.focus();
-    playSound(700, 0.1);
-  }
+  const isMyTurn = data.speakerId === myUserId; const inputEl = document.getElementById('clueInput'); const btnSend = document.getElementById('btnSendClue');
+  inputEl.disabled = !isMyTurn; btnSend.disabled = !isMyTurn; if (isMyTurn) { inputEl.focus(); playSound(700, 0.1); }
 }
 
 document.getElementById('btnSendClue').addEventListener('click', sendMyClue);
-document.getElementById('clueInput').addEventListener('keypress', (e) => {
-  if (e.key === 'Enter') sendMyClue();
-});
+document.getElementById('clueInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMyClue(); });
 
 function sendMyClue() {
-  const input = document.getElementById('clueInput');
-  const text = input.value.trim();
-  if (!text) return;
-  input.value = '';
-
-  document.getElementById('clueInput').disabled = true;
-  document.getElementById('btnSendClue').disabled = true;
-
-  if (isHost) {
-    broadcastClue(myUserId, text);
-  } else {
-    hostConn.send({ type: 'CLUE', userId: myUserId, text: text });
-  }
+  const input = document.getElementById('clueInput'); const text = input.value.trim(); if (!text) return; input.value = '';
+  document.getElementById('clueInput').disabled = true; document.getElementById('btnSendClue').disabled = true;
+  if (isHost) { broadcastClue(myUserId, text); } else { hostConn.send({ type: 'CLUE', userId: myUserId, text: text }); }
 }
 
 function broadcastClue(speakerUid, text) {
-  const speakerNick = players[speakerUid]?.nickname || '익명';
-  currentRoundClues.push({ speakerNick, text });
-
-  const packet = { type: 'CLUE_BROADCAST', speakerId: speakerUid, speakerNick, text };
-  broadcast(packet);
-  appendClueLog(speakerNick, text);
-
-  if (isHost && turnOrder[currentTurnIndex] === speakerUid) {
-    clearInterval(phaseTimer);
-    setTimeout(() => {
-      startSpeakerTurn(currentTurnIndex + 1);
-    }, 600);
-  }
+  const speakerNick = players[speakerUid]?.nickname || '익명'; currentRoundClues.push({ speakerNick, text });
+  const packet = { type: 'CLUE_BROADCAST', speakerId: speakerUid, speakerNick, text }; broadcast(packet); appendClueLog(speakerNick, text);
+  if (isHost && turnOrder[currentTurnIndex] === speakerUid) { clearInterval(phaseTimer); setTimeout(() => startSpeakerTurn(currentTurnIndex + 1), 600); }
 }
 
 function appendClueLog(nick, text) {
-  const log = document.getElementById('clueLog');
-  const div = document.createElement('div');
-  div.className = 'clue-msg';
-  div.innerHTML = `<span class="clue-speaker">[${nick}]:</span><span class="clue-text">${text}</span>`;
-  log.appendChild(div);
-  log.scrollTop = log.scrollHeight;
-  playSound(400, 0.04);
+  const log = document.getElementById('clueLog'); const div = document.createElement('div'); div.className = 'clue-msg';
+  div.innerHTML = `<span class="clue-speaker">[${nick}]:</span><span class="clue-text">${text}</span>`; log.appendChild(div); log.scrollTop = log.scrollHeight; playSound(400, 0.04);
 }
 
 function startVotingPhase() {
-  clearInterval(phaseTimer);
-  currentPhase = 'VOTE';
-  votes = {};
-
-  const packet = { type: 'VOTE_PHASE_START', time: roomSettings.voteTime };
-  broadcast(packet);
-  startVotePhaseUI(roomSettings.voteTime);
-
-  timeLeft = roomSettings.voteTime;
-  phaseTimer = setInterval(() => {
-    timeLeft--;
-    document.getElementById('phaseTimer').textContent = `${timeLeft}s`;
-    if (timeLeft <= 0) {
-      clearInterval(phaseTimer);
-      if (isHost) finishVotingPhase();
-    }
-  }, 1000);
+  clearInterval(phaseTimer); currentPhase = 'VOTE'; votes = {}; const packet = { type: 'VOTE_PHASE_START', time: roomSettings.voteTime }; broadcast(packet); startVotePhaseUI(roomSettings.voteTime);
+  timeLeft = roomSettings.voteTime; phaseTimer = setInterval(() => { timeLeft--; document.getElementById('phaseTimer').textContent = `${timeLeft}s`; if (timeLeft <= 0) { clearInterval(phaseTimer); if (isHost) finishVotingPhase(); } }, 1000);
 }
 
 function startVotePhaseUI(time) {
-  document.getElementById('currentPhaseText').textContent = '🗳️ 투표 페이즈';
-  document.getElementById('currentSpeakerLabel').textContent = '라이어로 의심되는 사람을 지목하세요!';
-  document.getElementById('phaseTimer').textContent = `${time}s`;
-  document.getElementById('clueInput').disabled = true;
-  document.getElementById('btnSendClue').disabled = true;
-
-  const voteGrid = document.getElementById('voteGrid');
-  voteGrid.style.display = 'grid';
-  voteGrid.innerHTML = '';
-
+  document.getElementById('currentPhaseText').textContent = '🗳️ 투표 페이즈'; document.getElementById('currentSpeakerLabel').textContent = '라이어로 의심되는 사람을 지목하세요!'; document.getElementById('phaseTimer').textContent = `${time}s`;
+  document.getElementById('clueInput').disabled = true; document.getElementById('btnSendClue').disabled = true;
+  const voteGrid = document.getElementById('voteGrid'); voteGrid.style.display = 'grid'; voteGrid.innerHTML = '';
   Object.values(players).forEach(p => {
     if (!p.online || p.userId === myUserId) return;
-    const btn = document.createElement('button');
-    btn.className = 'vote-btn';
-    btn.innerHTML = `<span>${p.nickname}</span><span>👉</span>`;
-    btn.onclick = () => {
-      document.querySelectorAll('.vote-btn').forEach(b => b.classList.remove('selected'));
-      btn.classList.add('selected');
-      submitMyVote(p.userId);
-    };
-    voteGrid.appendChild(btn);
-  });
-  playSound(600, 0.2);
+    const btn = document.createElement('button'); btn.className = 'vote-btn'; btn.innerHTML = `<span>${p.nickname}</span><span>👉</span>`;
+    btn.onclick = () => { document.querySelectorAll('.vote-btn').forEach(b => b.classList.remove('selected')); btn.classList.add('selected'); submitMyVote(p.userId); }; voteGrid.appendChild(btn);
+  }); playSound(600, 0.2);
 }
 
-function submitMyVote(targetUserId) {
-  if (isHost) {
-    votes[myUserId] = targetUserId;
-    const activeVoters = Object.values(players).filter(p => p.online).length;
-    if (Object.keys(votes).length >= activeVoters) finishVotingPhase();
-  } else {
-    hostConn.send({ type: 'VOTE', userId: myUserId, targetUserId });
-  }
-}
+function submitMyVote(targetUserId) { if (isHost) { votes[myUserId] = targetUserId; const activeVoters = Object.values(players).filter(p => p.online).length; if (Object.keys(votes).length >= activeVoters) finishVotingPhase(); } else { hostConn.send({ type: 'VOTE', userId: myUserId, targetUserId }); } }
 
 function finishVotingPhase() {
-  clearInterval(phaseTimer);
-  document.getElementById('voteGrid').style.display = 'none';
-
-  const voteCounts = {};
-  Object.values(votes).forEach(targetUid => {
-    voteCounts[targetUid] = (voteCounts[targetUid] || 0) + 1;
-  });
-
-  let maxVotes = 0;
-  votedLiarIds = [];
-  Object.entries(voteCounts).forEach(([uid, cnt]) => {
-    if (cnt > maxVotes) {
-      maxVotes = cnt;
-      votedLiarIds = [uid];
-    } else if (cnt === maxVotes) {
-      votedLiarIds.push(uid);
-    }
-  });
-
+  clearInterval(phaseTimer); document.getElementById('voteGrid').style.display = 'none';
+  const voteCounts = {}; Object.values(votes).forEach(targetUid => voteCounts[targetUid] = (voteCounts[targetUid] || 0) + 1);
+  let maxVotes = 0; votedLiarIds = []; Object.entries(voteCounts).forEach(([uid, cnt]) => { if (cnt > maxVotes) { maxVotes = cnt; votedLiarIds = [uid]; } else if (cnt === maxVotes) { votedLiarIds.push(uid); } });
   const caughtLiars = votedLiarIds.filter(uid => players[uid]?.isLiar);
-
   if (caughtLiars.length > 0) {
     currentPhase = 'LIAR_GUESS';
-    caughtLiars.forEach(liarUid => {
-      if (liarUid === myUserId) {
-        promptLiarGuessUI();
-      } else {
-        const conn = connections.find(c => c.peer === players[liarUid]?.peerId);
-        if (conn) conn.send({ type: 'LIAR_GUESS_PROMPT' });
-      }
-    });
-
-    timeLeft = 15;
-    document.getElementById('currentSpeakerLabel').textContent = '라이어가 정답을 맞추는 중입니다...';
-    phaseTimer = setInterval(() => {
-      timeLeft--;
-      document.getElementById('phaseTimer').textContent = `${timeLeft}s`;
-      if (timeLeft <= 0) {
-        clearInterval(phaseTimer);
-        finalizeRoundScores(false, false);
-      }
-    }, 1000);
-  } else {
-    finalizeRoundScores(true, false);
-  }
+    caughtLiars.forEach(liarUid => { if (liarUid === myUserId) { promptLiarGuessUI(); } else { const conn = connections.find(c => c.peer === players[liarUid]?.peerId); if (conn) conn.send({ type: 'LIAR_GUESS_PROMPT' }); } });
+    timeLeft = 15; document.getElementById('currentSpeakerLabel').textContent = '라이어가 정답을 맞추는 중입니다...';
+    phaseTimer = setInterval(() => { timeLeft--; document.getElementById('phaseTimer').textContent = `${timeLeft}s`; if (timeLeft <= 0) { clearInterval(phaseTimer); finalizeRoundScores(false, false); } }, 1000);
+  } else { finalizeRoundScores(true, false); }
 }
 
-function promptLiarGuessUI() {
-  document.getElementById('currentPhaseText').textContent = '🎯 단어 맞히기';
-  document.getElementById('currentSpeakerLabel').textContent = '당신이 지목되었습니다! 16개 중 정답 단어를 클릭하세요!';
-  renderWordGrid(true);
-}
-
-function submitLiarGuess(wordIndex) {
-  if (isHost) {
-    handleLiarGuessResult(myUserId, wordIndex);
-  } else {
-    hostConn.send({ type: 'LIAR_GUESS', userId: myUserId, guessIndex: wordIndex });
-    document.querySelectorAll('.word-tile').forEach(t => t.onclick = null);
-  }
-}
-
-function handleLiarGuessResult(liarUid, guessIndex) {
-  clearInterval(phaseTimer);
-  const isCorrect = (guessIndex === hostSecretWordIndex);
-  finalizeRoundScores(false, isCorrect);
-}
+function promptLiarGuessUI() { document.getElementById('currentPhaseText').textContent = '🎯 단어 맞히기'; document.getElementById('currentSpeakerLabel').textContent = '당신이 지목되었습니다! 16개 중 정답 단어를 클릭하세요!'; renderWordGrid(true); }
+function submitLiarGuess(wordIndex) { if (isHost) { handleLiarGuessResult(myUserId, wordIndex); } else { hostConn.send({ type: 'LIAR_GUESS', userId: myUserId, guessIndex: wordIndex }); document.querySelectorAll('.word-tile').forEach(t => t.onclick = null); } }
+function handleLiarGuessResult(liarUid, guessIndex) { clearInterval(phaseTimer); const isCorrect = (guessIndex === hostSecretWordIndex); finalizeRoundScores(false, isCorrect); }
 
 function finalizeRoundScores(liarEscaped, liarGuessedCorrectly) {
-  currentPhase = 'ROUND_RESULT';
-  let resultTitle = '';
-  let resultDesc = '';
-
-  const liarIds = Object.keys(players).filter(uid => players[uid].isLiar);
-  const citizenIds = Object.keys(players).filter(uid => !players[uid].isLiar);
-
-  if (liarEscaped) {
-    liarIds.forEach(id => players[id].score += 3);
-    resultTitle = '🕵️ 라이어 승리!';
-    resultDesc = '라이어가 지목되지 않고 완벽히 속였습니다! (라이어 +3점)';
-  } else if (liarGuessedCorrectly) {
-    liarIds.forEach(id => players[id].score += 1);
-    resultTitle = '🎯 라이어 역전 정답!';
-    resultDesc = '라이어가 지목되었지만 정답을 정확히 맞혔습니다! (라이어 +1점)';
-  } else {
-    citizenIds.forEach(id => players[id].score += 2);
-    resultTitle = '👮 시민 승리!';
-    resultDesc = '시민들이 라이어를 잡았고, 라이어가 정답을 맞추지 못했습니다! (시민 +2점)';
-  }
-
-  let winner = null;
-  Object.values(players).forEach(p => {
-    if (p.score >= roomSettings.targetScore) winner = p;
-  });
-
-  const packet = {
-    type: 'ROUND_RESULT',
-    resultTitle,
-    resultDesc,
-    secretWord: currentWords[hostSecretWordIndex],
-    liarNames: liarIds.map(id => players[id].nickname).join(', '),
-    players: players,
-    winner: winner
-  };
-
-  broadcast(packet);
-  showRoundResultUI(packet);
+  currentPhase = 'ROUND_RESULT'; let resultTitle = ''; let resultDesc = '';
+  const liarIds = Object.keys(players).filter(uid => players[uid].isLiar); const citizenIds = Object.keys(players).filter(uid => !players[uid].isLiar);
+  if (liarEscaped) { liarIds.forEach(id => players[id].score += 3); resultTitle = '🕵️ 라이어 승리!'; resultDesc = '라이어가 지목되지 않고 완벽히 속였습니다! (라이어 +3점)'; }
+  else if (liarGuessedCorrectly) { liarIds.forEach(id => players[id].score += 1); resultTitle = '🎯 라이어 역전 정답!'; resultDesc = '라이어가 지목되었지만 정답을 정확히 맞혔습니다! (라이어 +1점)'; }
+  else { citizenIds.forEach(id => players[id].score += 2); resultTitle = '👮 시민 승리!'; resultDesc = '시민들이 라이어를 잡았고, 라이어가 정답을 맞추지 못했습니다! (시민 +2점)'; }
+  let winner = null; Object.values(players).forEach(p => { if (p.score >= roomSettings.targetScore) winner = p; });
+  const packet = { type: 'ROUND_RESULT', resultTitle, resultDesc, secretWord: currentWords[hostSecretWordIndex], liarNames: liarIds.map(id => players[id].nickname).join(', '), players: players, winner: winner };
+  broadcast(packet); showRoundResultUI(packet);
 }
 
 function showRoundResultUI(data) {
-  players = data.players;
-  syncLeaderboardToParent();
-
-  if (data.winner) {
-    setTimeout(() => {
-      showFinalWinUI(data);
-    }, 2000);
-    return;
-  }
-
-  document.getElementById('resultTitle').textContent = data.resultTitle;
-  document.getElementById('resultDesc').textContent = data.resultDesc;
-  document.getElementById('resultSecretWord').textContent = data.secretWord;
-  document.getElementById('resultLiarList').textContent = `라이어: ${data.liarNames}`;
-
-  const tbody = document.getElementById('roundScoreTableBody');
-  tbody.innerHTML = '';
-  const sorted = Object.values(players).sort((a, b) => b.score - a.score);
-
-  sorted.forEach((p, idx) => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td class="${idx === 0 ? 'rank-1' : ''}">${idx + 1}등</td>
-      <td style="font-weight: 800;">${p.nickname}</td>
-      <td style="color: var(--accent); font-weight: 900;">${p.score}점</td>
-    `;
-    tbody.appendChild(tr);
-  });
-
-  const btnNext = document.getElementById('btnNextRound');
-  const txtWaiting = document.getElementById('waitingNextRoundText');
-  if (isHost) {
-    btnNext.style.display = 'block';
-    txtWaiting.style.display = 'none';
-  } else {
-    btnNext.style.display = 'none';
-    txtWaiting.style.display = 'block';
-  }
-
-  document.getElementById('roundResultModal').classList.add('active');
-  playSound(800, 0.3);
+  players = data.players; syncLeaderboardToParent();
+  if (data.winner) { setTimeout(() => showFinalWinUI(data), 2000); return; }
+  document.getElementById('resultTitle').textContent = data.resultTitle; document.getElementById('resultDesc').textContent = data.resultDesc;
+  document.getElementById('resultSecretWord').textContent = data.secretWord; document.getElementById('resultLiarList').textContent = `라이어: ${data.liarNames}`;
+  const tbody = document.getElementById('roundScoreTableBody'); tbody.innerHTML = '';
+  Object.values(players).sort((a, b) => b.score - a.score).forEach((p, idx) => { const tr = document.createElement('tr'); tr.innerHTML = `<td class="${idx === 0 ? 'rank-1' : ''}">${idx + 1}등</td><td style="font-weight: 800;">${p.nickname}</td><td style="color: var(--accent); font-weight: 900;">${p.score}점</td>`; tbody.appendChild(tr); });
+  const btnNext = document.getElementById('btnNextRound'); const txtWaiting = document.getElementById('waitingNextRoundText');
+  if (isHost) { btnNext.style.display = 'block'; txtWaiting.style.display = 'none'; } else { btnNext.style.display = 'none'; txtWaiting.style.display = 'block'; }
+  document.getElementById('roundResultModal').classList.add('active'); playSound(800, 0.3);
 }
 
-document.getElementById('btnNextRound').addEventListener('click', () => {
-  startNewRound();
-});
+document.getElementById('btnNextRound').addEventListener('click', () => startNewRound());
 
 function showFinalWinUI(data) {
-  currentPhase = 'FINAL_WIN';
-  isGameInProgress = false;
-  document.getElementById('roundResultModal').classList.remove('active');
-  showView('finalWin');
-
+  currentPhase = 'FINAL_WIN'; isGameInProgress = false; document.getElementById('roundResultModal').classList.remove('active'); showView('finalWin');
   document.getElementById('finalWinnerBanner').textContent = `🥇 최종 승자: ${data.winner?.nickname || '모두'}`;
-
-  const tbody = document.getElementById('finalScoreTableBody');
-  tbody.innerHTML = '';
-  const sorted = Object.values(players).sort((a, b) => b.score - a.score);
-
-  sorted.forEach((p, idx) => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td class="${idx === 0 ? 'rank-1' : ''}">${idx + 1}등</td>
-      <td style="font-weight: 800;">${p.nickname}</td>
-      <td style="color: var(--accent); font-weight: 900;">${p.score}점</td>
-    `;
-    tbody.appendChild(tr);
-  });
+  const tbody = document.getElementById('finalScoreTableBody'); tbody.innerHTML = '';
+  Object.values(players).sort((a, b) => b.score - a.score).forEach((p, idx) => { const tr = document.createElement('tr'); tr.innerHTML = `<td class="${idx === 0 ? 'rank-1' : ''}">${idx + 1}등</td><td style="font-weight: 800;">${p.nickname}</td><td style="color: var(--accent); font-weight: 900;">${p.score}점</td>`; tbody.appendChild(tr); });
 }
 
 document.getElementById('btnBackToLobbyFromWin').addEventListener('click', () => {
-  Object.keys(players).forEach(uid => players[uid].score = 0);
-  isGameInProgress = false;
-  currentPhase = 'LOBBY';
-  setupLobbyUI();
-  if (isHost) startHostBroadcasting();
+  Object.keys(players).forEach(uid => players[uid].score = 0); isGameInProgress = false; currentPhase = 'LOBBY'; setupLobbyUI(); if (isHost) startHostBroadcasting();
 });
 
 document.getElementById('btnRefreshRooms').addEventListener('click', renderPublicRoomList);
