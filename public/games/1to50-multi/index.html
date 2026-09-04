@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>1 to 50 멀티 배틀</title>
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script> <!-- 공개 방 조회를 위한 MQTT 추가 -->
+  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
   <style>
     * { box-sizing: border-box; user-select: none; -webkit-user-select: none; margin: 0; padding: 0; }
     :root {
@@ -46,31 +46,21 @@
     .form-label { font-size: 12px; font-weight: 800; color: var(--text-sub); }
     .toggle-row { display: flex; justify-content: space-between; align-items: center; background: var(--input-bg); border: 1px solid var(--card-border); padding: 10px 14px; border-radius: 12px; }
 
-    /* 방 목록 레이아웃 (새로 추가됨) */
     .room-list-container { margin-top: 14px; border-top: 1px solid var(--card-border); padding-top: 12px; flex: 1; max-height: 180px; display: flex; flex-direction: column; }
     .room-list-scroll { list-style: none; display: flex; flex-direction: column; gap: 6px; overflow-y: auto; flex: 1; }
     .room-item-card { background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 10px; padding: 10px 12px; display: flex; justify-content: space-between; align-items: center; }
 
     .room-code-container { margin: 10px 0; display: flex; flex-direction: column; align-items: center; gap: 6px; }
-    .room-code-badge {
-      width: 100%; background: var(--input-bg); border: 2px dashed var(--accent);
-      padding: 12px; border-radius: 14px; text-align: center; font-size: 24px;
-      font-weight: 900; letter-spacing: 4px; color: var(--accent);
-      display: flex; align-items: center; justify-content: center; position: relative; transition: all 0.15s ease;
-    }
+    .room-code-badge { width: 100%; background: var(--input-bg); border: 2px dashed var(--accent); padding: 12px; border-radius: 14px; text-align: center; font-size: 24px; font-weight: 900; letter-spacing: 4px; color: var(--accent); display: flex; align-items: center; justify-content: center; position: relative; transition: all 0.15s ease; }
     .room-code-text { cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; transition: opacity 0.15s ease; }
     .room-code-text:hover { opacity: 0.7; }
-    .btn-copy-code {
-      position: absolute; right: 12px; background: var(--accent); color: var(--accent-text);
-      border: none; padding: 8px 14px; border-radius: 10px; font-size: 13px; font-weight: 800;
-      cursor: pointer; letter-spacing: 0; white-space: nowrap; transition: transform 0.1s;
-    }
+    .btn-copy-code { position: absolute; right: 12px; background: var(--accent); color: var(--accent-text); border: none; padding: 8px 14px; border-radius: 10px; font-size: 13px; font-weight: 800; cursor: pointer; letter-spacing: 0; white-space: nowrap; transition: transform 0.1s; }
     .btn-copy-code:active { transform: scale(0.95); }
     .room-code-hint { font-size: 11px; font-weight: 700; color: var(--text-sub); }
 
     .room-info-bar { display: flex; justify-content: space-around; background: var(--input-bg); border: 1px solid var(--card-border); padding: 8px 12px; border-radius: 10px; font-size: 11px; font-weight: 800; color: var(--text-sub); margin-bottom: 8px; }
     .player-list { list-style: none; margin-top: 8px; display: flex; flex-direction: column; gap: 6px; overflow-y: auto; max-height: 180px; }
-    .player-item { background: var(--input-bg); border: 1px solid var(--card-border); padding: 10px 14px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: 700; gap: 8px; }
+    .player-item { background: var(--input-bg); border: 1px solid var(--card-border); padding: 10px 14px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: 700; gap: 8px; transition: opacity 0.2s; }
     .btn-kick { background: #ef4444; color: #ffffff; border: none; padding: 5px 10px; border-radius: 8px; font-size: 11px; font-weight: 800; cursor: pointer; flex-shrink: 0; }
 
     .game-top-bar { width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
@@ -99,39 +89,22 @@
     .rank-table th, .rank-table td { padding: 12px; text-align: center; border-bottom: 1px solid var(--card-border); font-size: 14px; font-weight: 700; }
     .rank-1 { color: var(--accent); font-size: 17px; font-weight: 900; }
 
-    /* =======================================================
-       💡 1to50 모바일 해상도 전용 최적화 (가로 480px 이하)
-       ======================================================= */
     @media (max-width: 480px) {
       #app { padding: 8px 6px; height: 100dvh; justify-content: flex-start; }
       .card { padding: 16px; border-radius: 16px; }
       h1 { font-size: 22px; }
       .input-group input, .input-group select, .input-group button { padding: 10px; font-size: 13px; }
-      
       .room-code-badge { font-size: 20px; padding: 10px; }
       .btn-copy-code { padding: 6px 12px; font-size: 12px; right: 8px; }
-
       .player-item { padding: 8px 12px; font-size: 12px; }
-      
-      /* 인게임 화면을 세로 공간에 딱 맞게 배치 */
       #viewGame { display: flex; flex-direction: column; height: 100%; justify-content: flex-start; gap: 4px; padding: 4px; }
-      
       .game-top-bar { margin-top: 4px; margin-bottom: 6px; flex-shrink: 0; }
       .target-box { font-size: 14px; padding: 4px 12px; }
       .timer { font-size: 18px; }
       .timer-limit { font-size: 10px; }
-      
-      /* 💡 그리드가 남은 세로 공간에 딱 맞춰 1:1 비율로 자동 축소되도록 강제 설정 */
       .grid-container { flex: 1; display: flex; align-items: center; justify-content: center; width: 100%; min-height: 0; overflow: hidden; margin-bottom: 0; }
-      .grid { 
-        width: 100%; 
-        max-width: min(100%, calc(100dvh - 120px)); /* 화면 높이에 비례하여 최대 크기 제한 */
-        aspect-ratio: 1 / 1; 
-        gap: 6px; 
-        margin: 0 auto; 
-      }
+      .grid { width: 100%; max-width: min(100%, calc(100dvh - 120px)); aspect-ratio: 1 / 1; gap: 6px; margin: 0 auto; }
       .grid .tile { font-size: clamp(14px, 6vw, 24px); border-radius: 8px; }
-      
       .rank-table th, .rank-table td { padding: 8px; font-size: 12px; }
       .rank-1 { font-size: 14px; }
     }
@@ -141,7 +114,6 @@
 
 <div id="app">
   <div id="countdownOverlay">3</div>
-  
   <div id="viewMenu" class="view active">
     <div class="card">
       <h1>⚡ 1 TO 50 멀티</h1>
@@ -155,7 +127,6 @@
           <button id="btnJoinRoom" class="secondary" style="flex: 1;">코드 입장</button>
         </div>
       </div>
-      <!-- 공개 방 리스트 추가 -->
       <div class="room-list-container">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
           <span style="font-size: 12px; font-weight: 900; color: var(--accent);">🌐 공개 방 (<span id="publicRoomCount">0</span>)</span>
@@ -181,13 +152,10 @@
     <div class="card">
       <h2 style="text-align: center; font-size: 20px;">대기실</h2>
       <p class="subtitle">방 코드를 공개한 뒤 복사하여 공유하세요! (제한시간 80초)</p>
-      
-      <!-- 방 코드 & 복사 영역 -->
       <div class="room-code-container">
         <div id="roomCodeDisplay" class="room-code-badge"></div>
         <span id="roomCodeHint" class="room-code-hint">클릭하여 방 코드 확인</span>
       </div>
-
       <div class="room-info-bar"><span>정원: <span id="infoMaxPlayers">8</span>명</span><span>닉네임: <span id="infoNickRule">자유</span></span><span>금지어: <span id="infoBannedCount">0</span>개</span></div>
       <div style="font-size: 13px; font-weight: 700; color: var(--text-sub); margin-top: 4px;">참가자 (<span id="playerCount">1</span>/<span id="maxCountDisplay">8</span>명)</div>
       <ul id="playerList" class="player-list"></ul>
@@ -231,8 +199,6 @@ function generateRandomNickname() {
 let peer = null; let connections = []; let hostConn = null; let isHost = false; let myId = ''; let myNickname = ''; let roomCode = ''; let isRoomCodeRevealed = false; let isConnecting = false;
 let roomSettings = { isPublic: true, maxPlayers: 8, allowCustomNickname: true, bannedWords: [] };
 let players = {}; let currentTarget = 1; let boardState = []; let pool26to50 = []; let timerInterval = null; let startTime = 0; let isGameOver = false;
-
-// 혼자하기 모드 식별 변수
 let isSinglePlayer = false;
 
 let myUserId = sessionStorage.getItem('meongtime_1to50_uid');
@@ -241,7 +207,6 @@ if (!myUserId) {
   sessionStorage.setItem('meongtime_1to50_uid', myUserId);
 }
 
-// === MQTT 공개방 로직 ===
 const MQTT_BROKER = 'wss://broker.emqx.io:8084/mqtt';
 const MQTT_TOPIC = 'meongtime/1to50/rooms/v1';
 let mqttClient = null; let publicRoomsMap = {}; let broadcastInterval = null;
@@ -307,11 +272,10 @@ function getShuffledArray(min, max) {
   for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [arr[i], arr[j]] = [arr[j], arr[i]]; } return arr;
 }
 
-// === 이벤트 리스너 ===
 document.getElementById('btnSinglePlayer').addEventListener('click', () => {
   isSinglePlayer = true; isHost = false;
   myNickname = document.getElementById('nicknameInput').value.trim() || generateRandomNickname();
-  myId = myUserId; players = {}; players[myId] = { nickname: myNickname, progress: 0, time: null, finished: false, timedOut: false };
+  myId = myUserId; players = {}; players[myId] = { nickname: myNickname, progress: 0, time: null, finished: false, timedOut: false, online: true };
   stopHostBroadcasting();
   const map1 = getShuffledArray(1, 25); const map2 = getShuffledArray(26, 50); startGame(map1, map2);
 });
@@ -323,17 +287,24 @@ document.getElementById('btnCancelModal').addEventListener('click', () => modalE
 document.getElementById('btnConfirmCreateRoom').addEventListener('click', () => {
   if (isConnecting) return; isConnecting = true; isSinglePlayer = false; modalEl.classList.remove('active'); 
   const inputVal = document.getElementById('nicknameInput').value.trim();
-  roomSettings = { 
-    isPublic: document.getElementById('modalIsPublic').value === 'true',
-    maxPlayers: parseInt(document.getElementById('modalMaxPlayers').value, 10), 
-    allowCustomNickname: document.getElementById('modalAllowCustomNick').checked, 
-    bannedWords: document.getElementById('modalBannedWords').value.split(',').map(w => w.trim()).filter(Boolean) 
-  };
+  roomSettings = { isPublic: document.getElementById('modalIsPublic').value === 'true', maxPlayers: parseInt(document.getElementById('modalMaxPlayers').value, 10), allowCustomNickname: document.getElementById('modalAllowCustomNick').checked, bannedWords: document.getElementById('modalBannedWords').value.split(',').map(w => w.trim()).filter(Boolean) };
   myNickname = (!roomSettings.allowCustomNickname || !inputVal) ? generateRandomNickname() : inputVal;
   isHost = true; roomCode = Math.random().toString(36).substring(2, 6).toUpperCase();
   peer = new Peer(`meongtime-1to50-${roomCode}`);
-  peer.on('open', (id) => { isConnecting = false; myId = id; players = {}; players[myId] = { nickname: myNickname, progress: 0, time: null, finished: false, timedOut: false }; setupLobbyUI(); syncLeaderboardToParent(); startHostBroadcasting(); });
-  peer.on('connection', (conn) => { connections.push(conn); conn.on('data', (data) => handleHostReceiveData(conn, data)); conn.on('close', () => { delete players[conn.peer]; connections = connections.filter(c => c !== conn); broadcast({ type: 'PLAYER_LIST', players }); renderLobbyList(); syncLeaderboardToParent(); }); });
+  peer.on('open', (id) => { isConnecting = false; myId = id; players = {}; players[myId] = { nickname: myNickname, progress: 0, time: null, finished: false, timedOut: false, online: true }; setupLobbyUI(); syncLeaderboardToParent(); startHostBroadcasting(); });
+  peer.on('connection', (conn) => { 
+    connections.push(conn); 
+    conn.on('data', (data) => handleHostReceiveData(conn, data)); 
+    conn.on('close', () => { 
+      if (boardState.length > 0 || isGameOver) {
+        if (players[conn.peer]) { players[conn.peer].online = false; players[conn.peer].finished = true; players[conn.peer].timedOut = true; }
+      } else {
+        delete players[conn.peer]; 
+      }
+      connections = connections.filter(c => c !== conn); 
+      broadcast({ type: 'PLAYER_LIST', players }); renderLobbyList(); syncLeaderboardToParent(); checkAllFinished();
+    }); 
+  });
   peer.on('error', () => { isConnecting = false; alert('방 생성에 실패했습니다. 다시 시도해주세요.'); });
 });
 
@@ -349,7 +320,8 @@ function connectToRoom(code, customNick) {
     myId = id; hostConn = peer.connect(`meongtime-1to50-${roomCode}`, { reliable: true });
     hostConn.on('open', () => { isConnecting = false; hostConn.send({ type: 'JOIN', nickname: myNickname }); });
     hostConn.on('data', (data) => handleGuestReceiveData(data));
-    hostConn.on('error', () => { isConnecting = false; alert('방에 연결할 수 없습니다.'); });
+    hostConn.on('close', () => { alert('방장과 연결이 끊겼습니다.'); showView('menu'); });
+    hostConn.on('error', () => { isConnecting = false; alert('방을 찾을 수 없거나 연결에 실패했습니다.'); });
   });
   peer.on('error', () => { isConnecting = false; alert('방을 찾을 수 없거나 네트워크 오류가 발생했습니다.'); });
 }
@@ -390,12 +362,15 @@ function kickUser(targetPeerId) {
 
 function renderLobbyList() {
   const listEl = document.getElementById('playerList'); listEl.innerHTML = '';
-  document.getElementById('playerCount').textContent = Object.keys(players).length;
-  Object.keys(players).forEach((pid) => {
-    const isMe = pid === myId; const li = document.createElement('li'); li.className = 'player-item';
-    let rightHtml = `<span style="color:var(--accent); font-weight:800;">대기 중</span>`;
-    if (isHost && !isMe) { rightHtml = `<div style="display:flex; align-items:center; gap:6px;"><span style="color:var(--accent); font-weight:800; font-size:12px;">대기 중</span><button class="btn-kick" onclick="kickUser('${pid}')">강퇴</button></div>`; }
-    li.innerHTML = `<span>${players[pid].nickname} ${isMe ? '(나)' : ''}</span>${rightHtml}`; listEl.appendChild(li);
+  const allPlayers = Object.keys(players);
+  document.getElementById('playerCount').textContent = allPlayers.filter(pid => players[pid].online !== false).length;
+  allPlayers.forEach((pid) => {
+    const isMe = pid === myId; const p = players[pid]; const isOnline = p.online !== false;
+    const li = document.createElement('li'); li.className = 'player-item';
+    if (!isOnline) li.style.opacity = '0.5';
+    let rightHtml = `<span style="color:${isOnline ? 'var(--accent)' : '#ef4444'}; font-weight:800;">${isOnline ? '대기 중' : '오프라인'}</span>`;
+    if (isHost && !isMe) { rightHtml = `<div style="display:flex; align-items:center; gap:6px;">${rightHtml}<button class="btn-kick" onclick="kickUser('${pid}')">강퇴</button></div>`; }
+    li.innerHTML = `<span>${p.nickname} ${isMe ? '(나)' : ''}</span>${rightHtml}`; listEl.appendChild(li);
   });
 }
 
@@ -404,7 +379,7 @@ function handleHostReceiveData(conn, data) {
     if (Object.keys(players).length >= roomSettings.maxPlayers) { conn.send({ type: 'JOIN_REJECT', reason: '방이 꽉 찼습니다.' }); setTimeout(() => conn.close(), 300); return; }
     let guestNick = (data.nickname || '').trim(); if (!roomSettings.allowCustomNickname || !guestNick) guestNick = generateRandomNickname();
     if (roomSettings.bannedWords.some(bw => guestNick.includes(bw))) { conn.send({ type: 'JOIN_REJECT', reason: '금지 단어 포함' }); setTimeout(() => conn.close(), 300); return; }
-    players[conn.peer] = { nickname: guestNick, progress: 0, time: null, finished: false, timedOut: false };
+    players[conn.peer] = { nickname: guestNick, progress: 0, time: null, finished: false, timedOut: false, online: true };
     conn.send({ type: 'JOIN_SUCCESS', myAssignedNick: guestNick, settings: roomSettings }); broadcast({ type: 'PLAYER_LIST', players }); renderLobbyList(); syncLeaderboardToParent();
   } else if (data.type === 'PROGRESS') { if (players[conn.peer]) { players[conn.peer].progress = data.progress; broadcast({ type: 'PROGRESS_UPDATE', players }); syncLeaderboardToParent(); }
   } else if (data.type === 'FINISH') { if (players[conn.peer]) { players[conn.peer].finished = true; players[conn.peer].time = data.time; players[conn.peer].timedOut = !!data.timedOut; players[conn.peer].progress = data.progress; broadcast({ type: 'FINISH_UPDATE', players }); syncLeaderboardToParent(); checkAllFinished(); } }
@@ -431,7 +406,7 @@ function startGame(map1, map2) {
   Object.keys(players).forEach(pid => { players[pid].progress = 0; players[pid].time = null; players[pid].finished = false; players[pid].timedOut = false; });
   showView('game'); renderBoard(); syncLeaderboardToParent();
   
-  if (isHost && !isSinglePlayer) startHostBroadcasting(); // 상태 업데이트용
+  if (isHost && !isSinglePlayer) startHostBroadcasting();
 
   const overlay = document.getElementById('countdownOverlay'); overlay.style.display = 'flex'; let count = 3; overlay.textContent = count; playSound(440, 0.1);
   const cdTimer = setInterval(() => { count--; if (count > 0) { overlay.textContent = count; playSound(440, 0.1); } else if (count === 0) { overlay.textContent = 'START!'; playSound(880, 0.2); } else { clearInterval(cdTimer); overlay.style.display = 'none'; startTimer(); } }, 1000);
@@ -446,13 +421,9 @@ function handleTimeout() {
   clearInterval(timerInterval); isGameOver = true; document.getElementById('gameTimer').textContent = '80.00'; playSound(150, 0.4, 'sawtooth');
   players[myId].finished = true; players[myId].timedOut = true; players[myId].time = TIME_LIMIT;
   
-  if (isSinglePlayer) {
-    syncLeaderboardToParent(); checkAllFinished();
-  } else if (isHost) { 
-    broadcast({ type: 'FINISH_UPDATE', players }); syncLeaderboardToParent(); checkAllFinished(); startHostBroadcasting(); 
-  } else { 
-    hostConn.send({ type: 'FINISH', time: TIME_LIMIT, timedOut: true, progress: players[myId].progress }); 
-  }
+  if (isSinglePlayer) { syncLeaderboardToParent(); checkAllFinished(); } 
+  else if (isHost) { broadcast({ type: 'FINISH_UPDATE', players }); syncLeaderboardToParent(); checkAllFinished(); startHostBroadcasting(); } 
+  else { hostConn.send({ type: 'FINISH', time: TIME_LIMIT, timedOut: true, progress: players[myId].progress }); }
 }
 
 function renderBoard() {
@@ -472,25 +443,17 @@ function handleTileClick(index) {
     currentTarget++; document.getElementById('targetNum').textContent = Math.min(currentTarget, 50); renderBoard();
     players[myId].progress = currentTarget - 1;
     
-    if (isSinglePlayer) {
-      syncLeaderboardToParent();
-    } else if (isHost) { 
-      broadcast({ type: 'PROGRESS_UPDATE', players }); syncLeaderboardToParent(); 
-    } else { 
-      hostConn.send({ type: 'PROGRESS', progress: currentTarget - 1 }); 
-    }
+    if (isSinglePlayer) { syncLeaderboardToParent(); } 
+    else if (isHost) { broadcast({ type: 'PROGRESS_UPDATE', players }); syncLeaderboardToParent(); } 
+    else { hostConn.send({ type: 'PROGRESS', progress: currentTarget - 1 }); }
     
     if (currentTarget > 50) {
       clearInterval(timerInterval); isGameOver = true; const finishTime = parseFloat(((performance.now() - startTime) / 1000).toFixed(2)); playSound(1200, 0.3, 'triangle');
       players[myId].finished = true; players[myId].timedOut = false; players[myId].time = finishTime;
       
-      if (isSinglePlayer) {
-        syncLeaderboardToParent(); checkAllFinished();
-      } else if (isHost) { 
-        broadcast({ type: 'FINISH_UPDATE', players }); syncLeaderboardToParent(); checkAllFinished(); startHostBroadcasting();
-      } else { 
-        hostConn.send({ type: 'FINISH', time: finishTime, timedOut: false, progress: 50 }); 
-      }
+      if (isSinglePlayer) { syncLeaderboardToParent(); checkAllFinished(); } 
+      else if (isHost) { broadcast({ type: 'FINISH_UPDATE', players }); syncLeaderboardToParent(); checkAllFinished(); startHostBroadcasting(); } 
+      else { hostConn.send({ type: 'FINISH', time: finishTime, timedOut: false, progress: 50 }); }
     }
   } else if (val !== null) { playSound(180, 0.08, 'sawtooth'); }
 }
@@ -500,30 +463,20 @@ function checkAllFinished() {
     setTimeout(() => { 
       showView('result'); 
       const tbody = document.getElementById('rankTableBody'); tbody.innerHTML = ''; 
-      
-      // 혼자하기 모드면 '메인 메뉴로' 변경
       document.getElementById('btnBackToLobby').textContent = isSinglePlayer ? "메인 메뉴로 돌아가기" : "대기실로 돌아가기";
-
       Object.values(players).sort((a, b) => { 
         const aOk = a.finished && !a.timedOut; const bOk = b.finished && !b.timedOut; 
         if (aOk && bOk) return a.time - b.time; if (aOk) return -1; if (bOk) return 1; return b.progress - a.progress; 
       }).forEach((p, i) => { 
         const tr = document.createElement('tr'); const isOk = p.finished && !p.timedOut; 
-        tr.innerHTML = `<td class="${i===0&&isOk?'rank-1':''}">${i===0&&isOk?'🥇 1등':i+1+'등'}</td><td style="font-weight:800;">${p.nickname}</td><td>${isOk?`<span style="color:#0284c7;font-weight:800;">${p.time}초</span>`:`<span style="color:#ef4444;font-weight:800;">시간초과 (${p.progress}/50)</span>`}</td>`; tbody.appendChild(tr); 
+        tr.innerHTML = `<td class="${i===0&&isOk?'rank-1':''}">${i===0&&isOk?'🥇 1등':i+1+'등'}</td><td style="font-weight:800;">${p.nickname} ${p.online === false ? '<span style="color:#ef4444; font-size:10px;">(오프라인)</span>' : ''}</td><td>${isOk?`<span style="color:#0284c7;font-weight:800;">${p.time}초</span>`:`<span style="color:#ef4444;font-weight:800;">시간초과 (${p.progress}/50)</span>`}</td>`; tbody.appendChild(tr); 
       }); 
     }, 800); 
   } 
 }
 
 document.getElementById('btnBackToLobby').addEventListener('click', () => {
-  if (isSinglePlayer) {
-    isSinglePlayer = false;
-    players = {}; 
-    syncLeaderboardToParent();
-    showView('menu');
-  } else {
-    setupLobbyUI();
-  }
+  if (isSinglePlayer) { isSinglePlayer = false; players = {}; syncLeaderboardToParent(); showView('menu'); } else { setupLobbyUI(); }
 });
 
 document.getElementById('btnRefreshRooms')?.addEventListener('click', renderPublicRoomList);

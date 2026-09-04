@@ -15,6 +15,7 @@ interface PlayerRank {
   finished: boolean;
   timedOut?: boolean;
   isMe: boolean;
+  online: boolean;
 }
 
 type ScreenSize = "normal" | "wide" | "full" | "custom";
@@ -28,7 +29,6 @@ export default function GameViewer({ game }: { game: Game }) {
   
   const { theme, toggleTheme } = useTheme();
 
-  // PC 기준 최소 제한
   const minWidth = game.id === "liar-game" ? 480 : 440;
   const minHeight = 720;
 
@@ -149,6 +149,7 @@ export default function GameViewer({ game }: { game: Game }) {
             finished: !!p.finished,
             timedOut: !!p.timedOut,
             isMe: id === myId,
+            online: p.online !== false,
           })
         );
 
@@ -338,16 +339,19 @@ export default function GameViewer({ game }: { game: Game }) {
               <span className={`text-[11px] px-2.5 py-0.5 rounded-full font-bold ${
                 isDark ? "bg-slate-800 text-slate-400" : "bg-slate-100 text-slate-600"
               }`}>
-                {leaderboard.length}명
+                {leaderboard.filter(p => p.online).length}명 접속중
               </span>
             </div>
 
             <ul className="mt-3 flex lg:flex-col gap-2 overflow-x-auto lg:overflow-y-auto max-h-[350px] lg:max-h-[calc(100vh-280px)]">
               {leaderboard.map((p, idx) => {
+                const isOffline = !p.online;
                 const isScoreGame = p.score !== undefined;
                 const percent = Math.min(100, Math.max(0, ((p.progress || 0) / 50) * 100));
                 const isSuccess = p.finished && !p.timedOut;
-                const scoreText = isScoreGame
+                const scoreText = isOffline
+                  ? "오프라인"
+                  : isScoreGame
                   ? `${p.score}점`
                   : isSuccess
                   ? `${p.time}s`
@@ -359,6 +363,8 @@ export default function GameViewer({ game }: { game: Game }) {
                   <li
                     key={p.id}
                     className={`min-w-[180px] lg:min-w-0 p-2.5 rounded-xl border transition-all ${
+                      isOffline ? "opacity-40 grayscale" : ""
+                    } ${
                       p.isMe
                         ? isDark ? "bg-yellow-400/10 border-yellow-400/50" : "bg-amber-50 border-amber-400"
                         : isDark ? "bg-slate-950 border-slate-800/80" : "bg-slate-50 border-slate-200"
@@ -391,7 +397,9 @@ export default function GameViewer({ game }: { game: Game }) {
                       </div>
                       <span
                         className={`shrink-0 font-black text-xs ${
-                          isScoreGame
+                          isOffline
+                            ? "text-rose-500"
+                            : isScoreGame
                             ? "text-yellow-400"
                             : isSuccess
                             ? "text-emerald-500"
@@ -412,7 +420,9 @@ export default function GameViewer({ game }: { game: Game }) {
                       }`}>
                         <div
                           className={`h-full transition-all duration-150 ${
-                            isSuccess
+                            isOffline
+                              ? "bg-slate-500"
+                              : isSuccess
                               ? "bg-emerald-500"
                               : p.timedOut
                               ? "bg-rose-500"
@@ -442,7 +452,8 @@ export default function GameViewer({ game }: { game: Game }) {
               : !isFull
               ? {
                   minWidth: `min(100%, ${minWidth}px)`,
-                  height: `${minHeight}px`
+                  /* 모바일 기기에서만 동적으로 높이를 깎아 스크롤 방지 */
+                  height: `min(calc(100dvh - 140px), ${minHeight}px)` 
                 }
               : undefined
           }
