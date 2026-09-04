@@ -23,6 +23,7 @@
     }
     body, html { width: 100%; height: 100%; background: var(--bg-color); color: var(--text-main); font-family: -apple-system, BlinkMacSystemFont, "Pretendard", sans-serif; display: flex; justify-content: center; align-items: center; overflow: hidden; transition: background-color 0.2s, color 0.2s; }
     #app { width: 100%; max-width: 680px; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px; position: relative; }
+    
     .view { display: none; width: 100%; height: 100%; flex-direction: column; justify-content: center; }
     .view.active { display: flex; }
 
@@ -89,26 +90,25 @@
     .rank-table th, .rank-table td { padding: 12px; text-align: center; border-bottom: 1px solid var(--card-border); font-size: 14px; font-weight: 700; }
     .rank-1 { color: var(--accent); font-size: 17px; font-weight: 900; }
 
-    /* =======================================================
-       💡 모바일 해상도 전용: 상하 스크롤 방지 및 완벽한 정사각형 유지
-       ======================================================= */
     @media (max-width: 480px) {
-      #app { padding: 8px 6px; height: 100vh; }
+      #app { padding: 8px 6px; height: 100dvh; justify-content: flex-start; }
       .card { padding: 16px; border-radius: 16px; }
       h1 { font-size: 22px; }
       .input-group input, .input-group select, .input-group button { padding: 10px; font-size: 13px; }
+      
       .room-code-badge { font-size: 20px; padding: 10px; }
       .btn-copy-code { padding: 6px 12px; font-size: 12px; right: 8px; }
       .player-item { padding: 8px 12px; font-size: 12px; }
       
-      #viewGame { height: 100%; display: flex; flex-direction: column; justify-content: flex-start; gap: 8px; padding: 4px 0; }
-      .game-top-bar { margin: 4px 0; flex-shrink: 0; }
+      /* 💡 .view 클래스의 display: none 을 강제로 덮어쓰지 않도록 display: flex 부분 제거 */
+      #viewGame { height: 100%; justify-content: flex-start; gap: 4px; padding: 4px 0; }
+      
+      .game-top-bar { margin-top: 4px; margin-bottom: 6px; flex-shrink: 0; }
       .target-box { font-size: 14px; padding: 4px 12px; }
       .timer { font-size: 18px; }
       .timer-limit { font-size: 10px; }
       
       .grid-container { flex: 1; display: flex; align-items: center; justify-content: center; width: 100%; min-height: 0; overflow: hidden; margin-bottom: 0; }
-      /* 화면의 폭과 높이 중 가장 타이트한 쪽에 맞춰 최대 1:1 비율로 제한 */
       .grid { width: 100%; max-width: min(100vw - 16px, 100vh - 120px); aspect-ratio: 1 / 1; gap: 6px; margin: 0 auto; }
       .grid.size-sm, .grid.size-md, .grid.size-lg { max-width: min(100vw - 16px, 100vh - 120px); }
       .grid .tile { font-size: clamp(14px, 5vw, 24px); border-radius: 8px; }
